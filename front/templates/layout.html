@@ -9,7 +9,7 @@
 	<meta content='' name='keywords'>
 	<link href="{% static 'css/application.css' %}" rel="stylesheet"/>
 	<link href="{% static 'css/font-awesome.css' %}" rel="stylesheet" />
-	<link href="{% static 'img/favicon.ico' %}" rel="icon" type="image/ico" />
+	<link href="{% static 'images/favicon-optin-monster.ico' %}" rel="icon" type="image/ico" />
 	{% block css %}{% endblock %}
 </head>
 <body class='main page'>
@@ -17,17 +17,14 @@
 <!-- Navbar -->
 <div class='navbar navbar-default' id='navbar'>
 	<a class='navbar-brand' href='{% url 'dashboard' %}'>
-		<i class='fa fa-beer'></i> EzReports
+		<i class='fa fa-optin-monster'></i> EzReports
 	</a>
 	<ul class='nav navbar-nav pull-right'>
 		<li>
-			<a href='{% url 'params' %}'><i class='fa fa-cog'></i> Paramètres</a>
+			<a href='{% url 'params' %}' title="Paramètres..."><i class='fa fa-cog'></i></a>
 		</li>
 		<li>
-			<a href='#'><i class='fa fa-user'></i> <strong>John Doe</strong></a>
-		</li>
-		<li>
-			<a href='{% url 'logout' %}'><i class='fa fa-sign-out'></i></a>
+			<a href='{% url 'logout' %}'><strong>John Doe</strong> <i class='fa fa-sign-out'></i></a>
 		</li>
 	</ul>
 </div>
@@ -83,28 +80,29 @@
 	<!-- Tools -->
 	<section id='tools'>
 		<ul class='breadcrumb' id='breadcrumb'>
-			<li class='title'>Dashboard</li>
-			<li><a href="#">Lorem</a></li>
-			<li class='active'><a href="#">ipsum</a></li>
+			{% block breadcrumb %}
+			{% endblock %}
+{#			<li><a href="#">Lorem</a></li>#}
+{#			<li class='active'><a href="#">ipsum</a></li>#}
 		</ul>
 
-		<div id='toolbar'>
-			<div class='btn-group'>
-				<a class='btn' data-toggle='toolbar-tooltip' href='#' title='Building'>
-					<i class='fa fa-building'></i>
-				</a>
-				<a class='btn' data-toggle='toolbar-tooltip' href='#' title='Laptop'>
-					<i class='fa fa-laptop'></i>
-				</a>
-				<a class='btn' data-toggle='toolbar-tooltip' href='#' title='Calendar'>
-					<i class='fa fa-calendar'></i>
-					<span class='badge'>3</span>
-				</a>
-				<a class='btn' data-toggle='toolbar-tooltip' href='#' title='Lemon'>
-					<i class='fa fa-lemon-o'></i>
-				</a>
-			</div>
-		</div>
+{#		<div id='toolbar'>#}
+{#			<div class='btn-group'>#}
+{#				<a class='btn' data-toggle='toolbar-tooltip' href='#' title='Building'>#}
+{#					<i class='fa fa-building'></i>#}
+{#				</a>#}
+{#				<a class='btn' data-toggle='toolbar-tooltip' href='#' title='Laptop'>#}
+{#					<i class='fa fa-laptop'></i>#}
+{#				</a>#}
+{#				<a class='btn' data-toggle='toolbar-tooltip' href='#' title='Calendar'>#}
+{#					<i class='fa fa-calendar'></i>#}
+{#					<span class='badge'>3</span>#}
+{#				</a>#}
+{#				<a class='btn' data-toggle='toolbar-tooltip' href='#' title='Lemon'>#}
+{#					<i class='fa fa-lemon-o'></i>#}
+{#				</a>#}
+{#			</div>#}
+{#		</div>#}
 	</section>
 
 
