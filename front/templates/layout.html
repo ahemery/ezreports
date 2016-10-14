@@ -16,18 +16,18 @@
 
 <!-- Navbar -->
 <div class='navbar navbar-default' id='navbar'>
-	<a class='navbar-brand' href='#'>
+	<a class='navbar-brand' href='{% url 'dashboard' %}'>
 		<i class='fa fa-beer'></i> EzReports
 	</a>
 	<ul class='nav navbar-nav pull-right'>
 		<li>
-			<a href='#'><i class='fa fa-cog'></i> Paramètres</a>
+			<a href='{% url 'params' %}'><i class='fa fa-cog'></i> Paramètres</a>
 		</li>
 		<li>
 			<a href='#'><i class='fa fa-user'></i> <strong>John Doe</strong></a>
 		</li>
 		<li>
-			<a href='#'><i class='fa fa-sign-out'></i></a>
+			<a href='{% url 'logout' %}'><i class='fa fa-sign-out'></i></a>
 		</li>
 	</ul>
 </div>
@@ -109,7 +109,9 @@
 
 
 	<!-- Content -->
-	{% block content %}{% endblock %}
+	<div id='content'>
+		{% block content %}{% endblock %}
+	</div>
 	<!-- end content -->
 
 </div>
