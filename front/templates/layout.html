@@ -33,18 +33,12 @@
 	<!-- Sidebar -->
 	<section id='sidebar'>
 		<ul id='dock'>
-			<li class='active launcher'>
-				<i class='fa fa-dashboard'></i>
-				<a href="{%  url 'dashboard' %}">Dashboard</a>
+		{% for link in links %}
+			<li class='{% if request.resolver_match.url_name == link.name %}active{% endif %} launcher'>
+				<i class='fa {{ link.class }}'></i>
+				<a href="{% url link.name %}">{{ link.text }}</a>
 			</li>
-			<li class='launcher'>
-				<i class='fa fa-reddit-alien'></i>
-				<a href="{% url 'connexions' %}">Connexions</a>
-			</li>
-			<li class='launcher'>
-				<i class='fa fa-weibo'></i>
-				<a href="{% url 'consultations' %}">Consultations</a>
-			</li>
+		{% endfor %}
 {#			<li class='launcher dropdown hover'>#}
 {#				<i class='fa fa-flag'></i>#}
 {#				<a href='#'>Reports</a>#}
@@ -61,18 +55,6 @@
 {#					</li>#}
 {#				</ul>#}
 {#			</li>#}
-			<li class='launcher'>
-				<i class='fa fa-simplybuilt'></i>
-				<a href='{% url 'imports' %}'>Imports</a>
-			</li>
-{#			<li class='launcher'>#}
-{#				<i class='fa fa-cloud'></i>#}
-{#				<a href='#'>Backup</a>#}
-{#			</li>#}
-{#			<li class='launcher'>#}
-{#				<i class='fa fa-bug'></i>#}
-{#				<a href='#'>Feedback</a>#}
-{#			</li>#}
 		</ul>
 		<div id='beaker'></div>
 	</section>
@@ -80,6 +62,7 @@
 	<!-- Tools -->
 	<section id='tools'>
 		<ul class='breadcrumb' id='breadcrumb'>
+			<li><a href="{% url 'dashboard' %}"><i class="fa fa-home"></i></a></li>
 			{% block breadcrumb %}
 			{% endblock %}
 {#			<li><a href="#">Lorem</a></li>#}
