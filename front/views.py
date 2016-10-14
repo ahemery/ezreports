@@ -41,15 +41,15 @@ def consultations_view(request):
     })
 
 
-def imports_view(request):
+def plateformes_view(request):
 
     bases = Base.objects.all().order_by('url')
-    plateformes = Plateforme.objects.all().order_by('libelle')
+    editeurs = Editeur.objects.all().order_by('libelle')
 
-    return render(request, 'imports.html',
+    return render(request, 'plateformes.html',
     {
         'bases': bases,
-        'plateformes': plateformes,
+        'editeurs': editeurs,
     })
 
 
@@ -61,14 +61,14 @@ def params_view(request):
     })
 
 
-def plateforme_view(request, slug):
+def editeur_view(request, slug):
 
-    plateforme = get_object_or_404(Plateforme, slug=slug)
-    bases = Base.objects.filter(plateforme = plateforme)
+    editeur = get_object_or_404(Editeur, slug=slug)
+    bases = Base.objects.filter(editeur=editeur)
 
-    return render(request, 'plateforme.html',
+    return render(request, 'editeur.html',
     {
-        'plateforme': plateforme,
+        'editeur': editeur,
         'bases': bases,
     })
 

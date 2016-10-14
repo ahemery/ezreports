@@ -19,10 +19,10 @@ urlpatterns = [
     url(r'^$', views.dashboard_view, name='dashboard'),
     url(r'^connexions/$', views.connexions_view, name='connexions'),
     url(r'^consultations/$', views.consultations_view, name='consultations'),
-    url(r'^imports/$', views.imports_view, name='imports'),
     url(r'^params', views.params_view, name='params'),
 
-    url(r'^plateforme/(?P<slug>[\w\-]+)?/$', views.plateforme_view, name='plateforme'),
+    url(r'^plateformes/$', views.plateformes_view, name='plateformes'),
+    url(r'^editeur/(?P<slug>[\w\-]+)?/$', views.editeur_view, name='editeur'),
     url(r'^base/(?P<slug>[\w\-]+)?/$', views.base_view, name='base'),
 
     url(r'^login$', views.login_view, name='login'),

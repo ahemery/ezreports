@@ -48,9 +48,9 @@
 							<th>Bases</th>
 						</tr>
 						</thead>
-						{% for plateforme in plateformes %}
+						{% for editeur in editeurs %}
 							<tr>
-								<td><a href="{%  url 'plateforme' slug=plateforme.slug %}">{{ plateforme.libelle }}</a></td>
+								<td><a href="{%  url 'editeur' slug=editeur.slug %}">{{ editeur.libelle }}</a></td>
 								<td>xxx</td>
 							</tr>
 						{% endfor %}
