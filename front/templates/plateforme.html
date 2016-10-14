@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+{% load staticfiles %}
+
+
+{% block breadcrumb %}
+	<li class='title'><a href="{% url 'imports' %}">Imports</a></li>
+	<li class='title'>Plateforme</li>
+{% endblock %}
+
+
+{% block content %}
+
+	{{ plateforme }} <br>
+	{{ bases }}
+{%  endblock %}
+
+{% block script %}
+$(document).ready(function()
+{
+	$('table').DataTable(
+	{
+	});
+});
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'js/dataTables.bootstrap.js' %}"></script>
+{% endblock %}
+

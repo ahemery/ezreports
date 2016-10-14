@@ -100,11 +100,12 @@
 
 <!-- Javascripts -->
 <script src="{% static 'js/jquery-3.1.1.min.js' %}"></script>
-<script src="{% static 'js/jquery-ui.min.js' %}"></script>
+{#<script src="{% static 'js/jquery-ui.min.js' %}"></script>#}
 <script src="{% static 'js/bootstrap.min.js' %}"></script>
 <script src="{% static 'js/application.js' %}"></script>
-<script>{% block script %}{% endblock %}</script>
 {% block js %}{% endblock %}
+
+<script>{% block script %}{% endblock %}</script>
 
 </body>
 </html>

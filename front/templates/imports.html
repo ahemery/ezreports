@@ -1,4 +1,5 @@
 {% extends 'layout.html' %}
+{% load staticfiles %}
 
 
 {% block breadcrumb %}
@@ -7,12 +8,70 @@
 
 
 {% block content %}
-imports
+	<div class="row">
+		<div class="col-md-6">
+			<div class='panel panel-default'>
+				<div class='panel-heading'>
+					<i class='fa fa-database'></i> Bases
+				</div>
+
+				<div class='panel-body'>
+					<table class="table table-hover">
+						<thead>
+						<tr>
+							<th>Libelle</th>
+							<th>Plateforme</th>
+						</tr>
+						</thead>
+						{% for base in bases %}
+							<tr>
+								<td><a href="{%  url 'base' slug=base.slug %}">{{ base.url }}</a></td>
+								<td>{{ base.plateforme }}</td>
+							</tr>
+						{% endfor %}
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-md-6">
+			<div class='panel panel-default'>
+				<div class='panel-heading'>
+					<i class='fa fa-database'></i> Plateformes
+				</div>
+
+				<div class='panel-body'>
+					<table class="table table-hover">
+						<thead>
+						<tr>
+							<th>Libelle</th>
+							<th>Bases</th>
+						</tr>
+						</thead>
+						{% for plateforme in plateformes %}
+							<tr>
+								<td><a href="{%  url 'plateforme' slug=plateforme.slug %}">{{ plateforme.libelle }}</a></td>
+								<td>xxx</td>
+							</tr>
+						{% endfor %}
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
 {%  endblock %}
 
 {% block script %}
-$(document).ready( function()
+$(document).ready(function()
 {
+	$('table').DataTable(
+	{
+	});
 });
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'js/dataTables.bootstrap.js' %}"></script>
 {% endblock %}
 
