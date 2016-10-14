@@ -1,6 +1,6 @@
 .idea/
 env/
 ezreports/settings.py
-front/static
+#front/static
 *.pyc
 
