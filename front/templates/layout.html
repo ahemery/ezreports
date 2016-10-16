@@ -39,22 +39,6 @@
 				<a href="{% url link.name %}">{{ link.text }}</a>
 			</li>
 		{% endfor %}
-{#			<li class='launcher dropdown hover'>#}
-{#				<i class='fa fa-flag'></i>#}
-{#				<a href='#'>Reports</a>#}
-{#				<ul class='dropdown-menu'>#}
-{#					<li class='dropdown-header'>Launcher description</li>#}
-{#					<li>#}
-{#						<a href='#'>Action</a>#}
-{#					</li>#}
-{#					<li>#}
-{#						<a href='#'>Another action</a>#}
-{#					</li>#}
-{#					<li>#}
-{#						<a href='#'>Something else here</a>#}
-{#					</li>#}
-{#				</ul>#}
-{#			</li>#}
 		</ul>
 		<div id='beaker'></div>
 	</section>
@@ -100,9 +84,7 @@
 
 <!-- Javascripts -->
 <script src="{% static 'js/jquery-3.1.1.min.js' %}"></script>
-{#<script src="{% static 'js/jquery-ui.min.js' %}"></script>#}
 <script src="{% static 'js/bootstrap.min.js' %}"></script>
-<script src="{% static 'js/application.js' %}"></script>
 {% block js %}{% endblock %}
 
 <script>{% block script %}{% endblock %}</script>
