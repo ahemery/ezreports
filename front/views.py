@@ -42,6 +42,8 @@ def connexions_view(request):
         .annotate(total=Count('lien__ressource'))\
         .annotate(ressource=F('lien__ressource__libelle'))\
         .annotate(ressource_slug=F('lien__ressource__slug'))\
+        .annotate(editeur=F('lien__ressource__editeur__libelle'))\
+        .annotate(editeur_slug=F('lien__ressource__editeur__slug'))\
         .order_by('-total')[:15]
 
     return render(request, 'connexions.html',

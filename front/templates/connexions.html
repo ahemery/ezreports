@@ -1,5 +1,6 @@
 {% extends 'layout.html' %}
 {% load staticfiles %}
+{% load humanize %}
 
 {% block breadcrumb %}
 	<li class='title'>Connexions</li>
@@ -8,12 +9,12 @@
 
 
 {% block content %}
-	<h1><i class="fa fa-sign-in"></i> Connexions</h1>
+	<h1><i class="fa fa-reddit-alien"></i> Connexions</h1>
 	<div class="row">
 
 		<div class="col-md-6">
 			<div class='panel panel-default'>
-				<div class='panel-heading'><i class='fa fa-bar-chart fa fa-large'></i> Depuis les 3 derniers mois<div class='panel-tools'>
+				<div class='panel-heading'><i class='fa fa-bar-chart fa fa-large'></i> Depuis les 90 derniers jours <div class='panel-tools'>
 						{#					<div class='btn-group'>#}
 						{#						<a class='btn' href='#'>#}
 						{#							<i class='fa fa-refresh'></i>#}
@@ -34,20 +35,22 @@
 
 		<div class="col-md-6">
 			<div class='panel panel-default'>
-				<div class='panel-heading'><i class='fa fa-beer fa fa-trophy'></i> Top {{ tops|length }} des ressources en {%  now 'Y' %}</div>
+				<div class='panel-heading'><i class='fa fa-beer fa fa-trophy'></i> Top {{ tops|length }} des Ressources utilisées en {%  now 'Y' %}</div>
 				<div class='panel-body'>
 				<table class="table table-condensed table-hover">
 					<thead>
 					<tr>
-						<th></th>
-						<th></th>
+						<th>Ressource</th>
+						<th>Editeur</th>
+						<th>Connexions</th>
 					</tr>
 					</thead>
 					<tbody>
 					{% for top in tops %}
 					<tr>
 						<td><a href="{% url 'ressource' slug=top.ressource_slug %}">{{ top.ressource }}</a></td>
-						<td>{{ top.total }}</td>
+						<td><a href="{% url 'editeur' slug=top.editeur_slug %}">{{ top.editeur }}</a></td>
+						<td class="text-right">{{ top.total |intcomma }}</td>
 					</tr>
 					{% endfor %}
 					</tbody>
