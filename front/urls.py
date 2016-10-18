@@ -1,9 +1,11 @@
-
 from django.conf.urls import url
 from . import views
 from django.views.generic import TemplateView
 from django.template import RequestContext
 from django.shortcuts import render_to_response
+from django.conf import settings
+from django.conf.urls import include, url
+import debug_toolbar
 
 
 #
@@ -21,10 +23,16 @@ urlpatterns = [
     url(r'^consultations/$', views.consultations_view, name='consultations'),
     url(r'^params', views.params_view, name='params'),
 
-    url(r'^plateformes/$', views.plateformes_view, name='plateformes'),
-    url(r'^editeur/(?P<slug>[\w\-]+)?/$', views.editeur_view, name='editeur'),
-    url(r'^base/(?P<slug>[\w\-]+)?/$', views.base_view, name='base'),
+    url(r'^editeurs/$', views.editeurs_view, name='editeurs'),
+    url(r'^editeur/(?P<slug>[\w\-]+)/$', views.editeur_view, name='editeur'),
+
+    url(r'^ressources/$', views.ressources_view, name='ressources'),
+    url(r'^ressource/(?P<slug>[\w\-]+)/$', views.ressource_view, name='ressource'),
+
+    url(r'^lien/(?P<slug>[\w\-]+)?/$', views.lien_view, name='lien'),
 
     url(r'^login$', views.login_view, name='login'),
     url(r'^logout$', views.logout_view, name='logout'),
+
+    url(r'^__debug__/', include(debug_toolbar.urls)),
 ]

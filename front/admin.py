@@ -7,13 +7,18 @@ class EditeurAdmin(admin.ModelAdmin):
     ordering = ['libelle']
 
 
-class BaseAdmin(admin.ModelAdmin):
-    list_display = ('url', 'slug', 'editeur')
-    ordering = ['url']
+class LienAdmin(admin.ModelAdmin):
+    list_display = ('slug', 'url', 'ressource')
+    ordering = ['slug']
+
+
+class RessourceAdmin(admin.ModelAdmin):
+    list_display = ('libelle', 'slug', 'editeur')
+    ordering = ['libelle']
 
 
 admin.site.register(Editeur, EditeurAdmin)
-# admin.site.register(Library)
-admin.site.register(Base, BaseAdmin)
+admin.site.register(Lien, LienAdmin)
+admin.site.register(Ressource, RessourceAdmin)
 # admin.site.register(Membership)
 # admin.site.register(admin.site)

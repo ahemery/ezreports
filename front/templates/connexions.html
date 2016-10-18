@@ -1,18 +1,115 @@
 {% extends 'layout.html' %}
-
+{% load staticfiles %}
 
 {% block breadcrumb %}
 	<li class='title'>Connexions</li>
+
 {% endblock %}
 
 
 {% block content %}
-connexions
+	<h1><i class="fa fa-sign-in"></i> Connexions</h1>
+	<div class="row">
+
+		<div class="col-md-6">
+			<div class='panel panel-default'>
+				<div class='panel-heading'><i class='fa fa-bar-chart fa fa-large'></i> Depuis les 3 derniers mois<div class='panel-tools'>
+						{#					<div class='btn-group'>#}
+						{#						<a class='btn' href='#'>#}
+						{#							<i class='fa fa-refresh'></i>#}
+						{#							Refresh statics#}
+						{#						</a>#}
+						{#						<a class='btn' data-toggle='toolbar-tooltip' href='#' title='Toggle'>#}
+						{#							<i class='fa fa-chevron-down'></i>#}
+						{#						</a>#}
+						{#					</div>#}
+					</div>
+				</div>
+				<div class='panel-body'>
+					<div id="months"></div>
+				</div>
+			</div>
+		</div>
+
+
+		<div class="col-md-6">
+			<div class='panel panel-default'>
+				<div class='panel-heading'><i class='fa fa-beer fa fa-large'></i> Hier</div>
+				<div class='panel-body'>
+					<div class='page-header'>
+						<h4>Statistiques :</h4>
+					</div>
+					<div class='row text-center'>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 {%  endblock %}
 
+
+{% block js %}
+<script src="{% static 'js/highcharts.js' %}"></script>
+
+{% endblock %}
+
+
 {% block script %}
-$(document).ready( function()
-{
-});
+	$(document).ready( function()
+	{
+		$('#months').highcharts({
+			chart: {
+				type: 'area'
+			},
+			title: {
+				text: 'Connexions aux ressources'
+			},
+			subtitle: {
+				text: 'Sur les 90 derniers jours'
+			},
+			xAxis: {
+{#				allowDecimals: false,#}
+				type: 'datetime',
+{#				maxZoom: 48 * 3600 * 1000,#}
+{#				labels: {#}
+{#					formatter: function () {#}
+{#						return this.value;#}
+{#					}#}
+{#				}#}
+			},
+			yAxis: {
+				title: {
+					text: 'Connexions'
+				},
+{#				labels: {#}
+{#					formatter: function () {#}
+{#						return this.value / 1000 + 'k';#}
+{#					}#}
+{#				}#}
+			},
+			tooltip: {
+				pointFormat: '<b>{point.y:,.0f}</b> connexions'
+			},
+			plotOptions: {
+				area: {
+					marker: {
+						enabled: false,
+						symbol: 'circle',
+						radius: 2,
+						states: {
+							hover: {
+								enabled: true
+							}
+						}
+					}
+				}
+			},
+			series: [{
+				pointStart: Date.UTC({{ start.year }}, {{ start.month }} - 1, {{ start.day }}),
+				pointInterval: 24 * 3600 * 1000,
+				data: [{% for connexion in connexions %}{{ connexion.total}}, {% endfor %}]
+			}]
+		});
+	});
 {% endblock %}
 

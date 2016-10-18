@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from .models import *
 from django.shortcuts import get_object_or_404, render
-
+from datetime import datetime, timedelta
+from django.db.models import Count
 
 def login_view(request):
     return render(request, 'login.html',
@@ -19,17 +20,25 @@ def logout_view(request):
 
 def dashboard_view(request):
 
+    ressources = Lien.objects.all()
     return render(request, 'dashboard.html',
     {
-
+        'ressources': ressources,
     })
 
 
 def connexions_view(request):
 
+    start = datetime.now() - timedelta(days=90)
+    connexions = Connexion.objects\
+        .values('date')\
+        .filter(date__gte=start)\
+        .annotate(total=Count('date'))\
+        .order_by('date')
     return render(request, 'connexions.html',
     {
-
+        'connexions': connexions,
+        'start': start,
     })
 
 
@@ -41,15 +50,27 @@ def consultations_view(request):
     })
 
 
-def plateformes_view(request):
+def ressources_view(request):
 
-    bases = Base.objects.all().order_by('url')
+    liens = Lien.objects.all().order_by('url')
     editeurs = Editeur.objects.all().order_by('libelle')
 
-    return render(request, 'plateformes.html',
+    return render(request, 'ressources.html',
     {
-        'bases': bases,
+        'liens': liens,
         'editeurs': editeurs,
+    })
+
+
+def ressource_view(request, slug):
+
+    ressource = get_object_or_404(Ressource, slug=slug)
+    liens = Lien.objects.filter(ressource=ressource).order_by('lien')
+
+    return render(request, 'ressource.html',
+    {
+        'ressource': ressource,
+        'liens': liens,
     })
 
 
@@ -64,21 +85,30 @@ def params_view(request):
 def editeur_view(request, slug):
 
     editeur = get_object_or_404(Editeur, slug=slug)
-    bases = Base.objects.filter(editeur=editeur)
+    ressources = Ressource.objects.filter(editeur=editeur).order_by('libelle')
 
     return render(request, 'editeur.html',
     {
         'editeur': editeur,
-        'bases': bases,
+        'ressources': ressources,
     })
 
 
-def base_view(request, slug):
+def editeurs_view(request):
 
-    base = get_object_or_404(Base, slug=slug)
+    editeurs = Editeur.objects.all().order_by('libelle')
+
+    return render(request, 'editeurs.html',
+    {
+        'editeurs': editeurs,
+    })
+
+
+def lien_view(request, slug):
+    lien = get_object_or_404(Lien, slug=slug)
 
     return render(request, 'base.html',
     {
-        'base': base,
+        'lien': lien,
     })
 

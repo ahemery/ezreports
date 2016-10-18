@@ -4,31 +4,29 @@
 
 {% block breadcrumb %}
 	<li class='title'><a href="{% url 'editeurs' %}">Editeurs</a></li>
-	<li class='title'>{{ editeur.libelle }}</li>
 {% endblock %}
 
 
 {% block content %}
 
-	<h1>{{ editeur }}</h1>
-
 	<table class="table table-hover">
 		<thead>
 		<tr>
-			<th></th>
+			<th>Libelle</th>
 			<th></th>
 		</tr>
 		</thead>
-		<tbody>
-		{% for ressource in ressources %}
+	<tbody>
+	{% for editeur in editeurs %}
 		<tr>
-			<td><a href="{% url 'ressource' slug=ressource.slug %}">{{ ressource.libelle}}</a></td>
+			<td><a href="{% url 'editeur' slug=editeur.slug %}">{{ editeur.libelle }}</a></td>
 			<td></td>
 		</tr>
-			{% endfor %}
-		</tbody>
+	{% endfor %}
+	</tbody>
 	</table>
-	{{ urls }}
+	{{ plateforme }} <br>
+	{{ bases }}
 {%  endblock %}
 
 {% block script %}
