@@ -2,7 +2,7 @@ from django.shortcuts import render
 from .models import *
 from django.shortcuts import get_object_or_404, render
 from datetime import datetime, timedelta
-from django.db.models import Count
+from django.db.models import Count, F
 
 def login_view(request):
     return render(request, 'login.html',
@@ -35,10 +35,20 @@ def connexions_view(request):
         .filter(date__gte=start)\
         .annotate(total=Count('date'))\
         .order_by('date')
+
+    tops = Connexion.objects\
+        .values('lien__ressource')\
+        .filter(date__year=str(datetime.now().year))\
+        .annotate(total=Count('lien__ressource'))\
+        .annotate(ressource=F('lien__ressource__libelle'))\
+        .annotate(ressource_slug=F('lien__ressource__slug'))\
+        .order_by('-total')[:15]
+
     return render(request, 'connexions.html',
     {
         'connexions': connexions,
         'start': start,
+        'tops': tops,
     })
 
 
@@ -66,10 +76,12 @@ def ressource_view(request, slug):
 
     ressource = get_object_or_404(Ressource, slug=slug)
     liens = Lien.objects.filter(ressource=ressource).order_by('lien')
+    editeur = Editeur.objects.get(id=ressource.editeur_id)
 
     return render(request, 'ressource.html',
     {
         'ressource': ressource,
+        'editeur': editeur,
         'liens': liens,
     })
 

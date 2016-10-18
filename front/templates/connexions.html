@@ -34,13 +34,24 @@
 
 		<div class="col-md-6">
 			<div class='panel panel-default'>
-				<div class='panel-heading'><i class='fa fa-beer fa fa-large'></i> Hier</div>
+				<div class='panel-heading'><i class='fa fa-beer fa fa-trophy'></i> Top {{ tops|length }} des ressources en {%  now 'Y' %}</div>
 				<div class='panel-body'>
-					<div class='page-header'>
-						<h4>Statistiques :</h4>
-					</div>
-					<div class='row text-center'>
-					</div>
+				<table class="table table-condensed table-hover">
+					<thead>
+					<tr>
+						<th></th>
+						<th></th>
+					</tr>
+					</thead>
+					<tbody>
+					{% for top in tops %}
+					<tr>
+						<td><a href="{% url 'ressource' slug=top.ressource_slug %}">{{ top.ressource }}</a></td>
+						<td>{{ top.total }}</td>
+					</tr>
+					{% endfor %}
+					</tbody>
+				</table>
 				</div>
 			</div>
 		</div>
@@ -50,6 +61,7 @@
 
 {% block js %}
 <script src="{% static 'js/highcharts.js' %}"></script>
+<script src="{% static 'js/highcharts-fr.js' %}"></script>
 
 {% endblock %}
 
@@ -61,6 +73,9 @@
 			chart: {
 				type: 'area'
 			},
+			credits: {
+				enabled: false,
+			},
 			title: {
 				text: 'Connexions aux ressources'
 			},
@@ -68,24 +83,13 @@
 				text: 'Sur les 90 derniers jours'
 			},
 			xAxis: {
-{#				allowDecimals: false,#}
 				type: 'datetime',
-{#				maxZoom: 48 * 3600 * 1000,#}
-{#				labels: {#}
-{#					formatter: function () {#}
-{#						return this.value;#}
-{#					}#}
-{#				}#}
 			},
 			yAxis: {
+				allowDecimals: false,
 				title: {
 					text: 'Connexions'
 				},
-{#				labels: {#}
-{#					formatter: function () {#}
-{#						return this.value / 1000 + 'k';#}
-{#					}#}
-{#				}#}
 			},
 			tooltip: {
 				pointFormat: '<b>{point.y:,.0f}</b> connexions'
@@ -105,6 +109,7 @@
 				}
 			},
 			series: [{
+				showInLegend: false,
 				pointStart: Date.UTC({{ start.year }}, {{ start.month }} - 1, {{ start.day }}),
 				pointInterval: 24 * 3600 * 1000,
 				data: [{% for connexion in connexions %}{{ connexion.total}}, {% endfor %}]

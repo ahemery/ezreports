@@ -1,5 +1,6 @@
 .idea/
 env/
 ezreports/config.py
+ezreports/config.prod.py
 *.pyc
 

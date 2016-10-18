@@ -29,7 +29,7 @@ urlpatterns = [
     url(r'^ressources/$', views.ressources_view, name='ressources'),
     url(r'^ressource/(?P<slug>[\w\-]+)/$', views.ressource_view, name='ressource'),
 
-    url(r'^lien/(?P<slug>[\w\-]+)?/$', views.lien_view, name='lien'),
+    url(r'^lien/(?P<slug>[\w\-]+)/$', views.lien_view, name='lien'),
 
     url(r'^login$', views.login_view, name='login'),
     url(r'^logout$', views.logout_view, name='logout'),
