@@ -12,22 +12,49 @@
 
 	<div class="row">
 		<div class="col-md-6">
-			<table class="table table-hover">
-				<thead>
-				<tr>
-					<th>Libelle</th>
-					<th></th>
-				</tr>
-				</thead>
-				<tbody>
-				{% for editeur in editeurs %}
-					<tr>
-						<td><a href="{% url 'editeur' slug=editeur.slug %}">{{ editeur.libelle }}</a></td>
-						<td></td>
-					</tr>
-				{% endfor %}
-				</tbody>
-			</table>
+			<div class='panel panel-default'>
+				<div class='panel-heading'><i class='fa fa-list-alt'></i> Liste des éditeurs</div>
+				<div class='panel-body'>
+					<table class="table table-hover table-condensed">
+						<thead>
+						<tr>
+							<th>Editeur</th>
+							<th>Ressources</th>
+						</tr>
+						</thead>
+						<tbody>
+						{% for editeur in editeurs %}
+							<tr>
+								<td><a href="{% url 'editeur' slug=editeur.slug %}">{{ editeur.libelle }}</a></td>
+								<td class="text-right">{{ editeur.ressources }}</td>
+							</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-md-6">
+			<div class='panel panel-default'>
+				<div class='panel-heading'><i class='fa fa-unlink'></i> Liens sans ressource associée</div>
+				<div class='panel-body'>
+					<table class="table table-condensed table-hover">
+						<thead>
+						<tr>
+							<th>Url</th>
+						</tr>
+						</thead>
+						<tbody>
+						{% for lien in liens %}
+							<tr>
+								<td><a href="{% url 'lien' slug=lien.slug %}">{{ lien.url }}</a></td>
+							</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
 	</div>
 {%  endblock %}

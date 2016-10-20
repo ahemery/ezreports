@@ -35,7 +35,7 @@
 
 		<div class="col-md-6">
 			<div class='panel panel-default'>
-				<div class='panel-heading'><i class='fa fa-beer fa fa-trophy'></i> Top {{ tops|length }} des Ressources utilisées en {%  now 'Y' %}</div>
+				<div class='panel-heading'><i class='fa fa-trophy'></i> Top {{ tops|length }} des Ressources utilisées en {%  now 'Y' %}</div>
 				<div class='panel-body'>
 				<table class="table table-condensed table-hover">
 					<thead>
@@ -58,7 +58,12 @@
 				</div>
 			</div>
 		</div>
+
+		<div class="col-md-6" id="donut">
+
+		</div>
 	</div>
+
 {%  endblock %}
 
 
@@ -116,6 +121,109 @@
 				pointStart: Date.UTC({{ start.year }}, {{ start.month }} - 1, {{ start.day }}),
 				pointInterval: 24 * 3600 * 1000,
 				data: [{% for connexion in connexions %}{{ connexion.total}}, {% endfor %}]
+			}]
+		});
+
+
+		// Donut
+		var colors = Highcharts.getOptions().colors;
+		var data = [
+			{% for id, data in donut %}
+			{
+				editeur:	"{{ data.editeur }}",
+				ratio: 		{{ data.ratio|stringformat:"f" }},
+				y: 			{{ data.total }},
+				color: 		colors[{{ forloop.counter }}],
+				drilldown: {
+					ressources: [{% for i, d in data.ressources.items %}'{{ d.libelle }}', {% endfor %}],
+					data:		[{% for i, d in data.ressources.items %}{{ d.total }}, {% endfor %}],
+					ratio:		[{% for i, d in data.ressources.items %}{{ d.ratio|stringformat:"f" }}, {% endfor %}],
+				}
+			},
+			{% endfor %}
+			];
+		var editorData = [];
+		var ressourceData = [];
+
+
+		// Build the data arrays
+		for (var i = 0; i < data.length; i += 1) {
+
+			// add browser data
+			editorData.push({
+				name:	data[i].editeur,
+				y:		data[i].y,
+				color:	data[i].color,
+				ratio:	data[i].ratio,
+			});
+
+			// add version data
+			var drillDataLen = data[i].drilldown.data.length;
+			for (var j = 0; j < drillDataLen; j += 1) {
+				var brightness = 0.2 - (j / drillDataLen) / 5;
+				ressourceData.push({
+					name:		data[i].drilldown.ressources[j],
+					y:			data[i].drilldown.data[j],
+					ratio:		{ratio: data[i].drilldown.ratio[j]},
+					color:		Highcharts.Color(data[i].color).brighten(brightness).get(),
+				});
+			}
+		}
+
+		// Create the chart
+		$('#donut').highcharts({
+			chart: {
+				type: 'pie'
+			},
+			credits: {
+				enabled: false,
+			},
+			title: {
+				text: 'Répartition des connexions sur l\'année {% now 'Y' %}'
+			},
+			subtitle: {
+				text: ''
+			},
+			plotOptions: {
+				pie: {
+					shadow: false,
+					center: ['50%', '50%']
+				}
+			},
+			tooltip: {
+{#				valueSuffix: '####'#}
+			},
+			series: [
+			{
+				name: 'Editeurs',
+				data: editorData,
+				size: '60%',
+				dataLabels: {
+					formatter: function () {	// Affichage dans le donut
+						return null;
+						return this.point.ratio > 5 ? this.point.name : null;
+					},
+					color: '#ffffff',
+					distance: -30
+				},
+				tooltip:
+				{
+					headerFormat: '',
+					pointFormat: '{point.name} - {point.y}',
+					footerFormat: '',
+				},
+			},
+			{
+				name: 'Ressources',
+				data: ressourceData,
+				size: '80%',
+				innerSize: '60%',
+{#				dataLabels: {#}
+{#					formatter: function () {#}
+{#						// display only if larger than 1#}
+{#						return this.y > 2 ? '<b>' + this.point.name + ':</b> ' + ((this.y / 90975) * 100).toFixed(2) + '%' : null;#}
+{#					}#}
+{#				}#}
 			}]
 		});
 	});

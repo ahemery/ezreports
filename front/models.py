@@ -48,7 +48,6 @@ class Ressource(models.Model):
 class Lien(models.Model):
     id = models.AutoField(primary_key=True)
     url = models.CharField(max_length=250, null=False, unique=True)
-    # editeur = models.ForeignKey(Editeur, null=True, default=None)
     ressource = models.ForeignKey(Ressource, null=True, default=None)
     slug = models.SlugField(unique=True)
 
@@ -61,7 +60,7 @@ class Lien(models.Model):
         return 'lien', [self.slug]
 
     def __str__(self):
-        return self.lien
+        return self.url
 
     class Meta:
         db_table = "liens"

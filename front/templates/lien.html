@@ -3,13 +3,13 @@
 
 
 {% block breadcrumb %}
-	<li class='title'><a href="{% url 'plateformes' %}">Plateformes</a></li>
-	<li class='title'>Base - {{ base.url }}</li>
+	<li class='title'><a href="{% url 'liens' %}">Liens</a></li>
+	<li class='title'>{{ lien.url }}</li>
 {% endblock %}
 
 
 {% block content %}
-	{{ base }}
+	{{ lien }}
 {%  endblock %}
 
 {% block script %}

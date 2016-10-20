@@ -11,26 +11,22 @@
 {% block content %}
 	<h1>{{ ressource.libelle }} de <a href="{% url 'editeur' slug=editeur.slug %}">{{ editeur.libelle }}</a></h1>
 	<div class="row">
-		<div class="col-md-6">
+		<div class="col-md-3">
 			<div class='panel panel-default'>
 				<div class='panel-heading'>
 					<i class='fa fa-link'></i> Liens
 				</div>
 
 				<div class='panel-body'>
-					<table class="table table-hover">
-						<thead>
-						<tr>
-							<th>Libelle</th>
-							<th>Plateforme</th>
-						</tr>
-						</thead>
-						{% for url in urls %}
+					<table class="table table-hover table-condensed">
+						<tbody>
+						{% for lien in liens %}
 							<tr>
-								<td><a href="{%  url 'url' slug=url.slug %}">{{ url.url }}</a></td>
-								<td>{{ url.plateforme }}</td>
+								<td><a href="{% url 'lien' slug=lien.slug %}">{{ lien.url }}</a></td>
+								<td><a href="http://{{ lien.url }}" target="_blank"><i class="fa fa-external-link"></i></a></td>
 							</tr>
 						{% endfor %}
+						</tbody>
 					</table>
 				</div>
 			</div>
@@ -44,7 +40,7 @@
 {% block script %}
 $(document).ready(function()
 {
-	$('table').DataTable(
+	$('').DataTable(
 	{
 	});
 });

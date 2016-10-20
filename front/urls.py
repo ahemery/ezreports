@@ -30,6 +30,7 @@ urlpatterns = [
     url(r'^ressource/(?P<slug>[\w\-]+)/$', views.ressource_view, name='ressource'),
 
     url(r'^lien/(?P<slug>[\w\-]+)/$', views.lien_view, name='lien'),
+    url(r'^liens/$', views.liens_view, name='liens'),
 
     url(r'^login$', views.login_view, name='login'),
     url(r'^logout$', views.logout_view, name='logout'),
