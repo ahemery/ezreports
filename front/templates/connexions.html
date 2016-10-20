@@ -4,7 +4,6 @@
 
 {% block breadcrumb %}
 	<li class='title'>Connexions</li>
-
 {% endblock %}
 
 
@@ -190,27 +189,19 @@
 					center: ['50%', '50%']
 				}
 			},
-			tooltip: {
-{#				valueSuffix: '####'#}
-			},
 			series: [
 			{
 				name: 'Editeurs',
 				data: editorData,
 				size: '60%',
 				dataLabels: {
-					formatter: function () {	// Affichage dans le donut
-						return null;
-						return this.point.ratio > 5 ? this.point.name : null;
-					},
+					formatter: function () {return null;},
 					color: '#ffffff',
 					distance: -30
 				},
 				tooltip:
 				{
-					headerFormat: '',
-					pointFormat: '{point.name} - {point.y}',
-					footerFormat: '',
+					pointFormat: '<b>{point.y}</b> connexions',
 				},
 			},
 			{
@@ -218,12 +209,10 @@
 				data: ressourceData,
 				size: '80%',
 				innerSize: '60%',
-{#				dataLabels: {#}
-{#					formatter: function () {#}
-{#						// display only if larger than 1#}
-{#						return this.y > 2 ? '<b>' + this.point.name + ':</b> ' + ((this.y / 90975) * 100).toFixed(2) + '%' : null;#}
-{#					}#}
-{#				}#}
+				tooltip:
+				{
+					pointFormat: '<b>{point.y}</b> connexions',
+				},
 			}]
 		});
 	});
