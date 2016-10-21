@@ -1,3 +1,4 @@
+from django.core.management.base import BaseCommand
 import glob
 from datetime import datetime
 import re
@@ -97,17 +98,23 @@ def processconnexions(path, maxdate):
                         cursor.commit()
 
 
-def run():
+class Command(BaseCommand):
+    args = '<team_id>'
+    help = 'Affiche la liste des backlogs'
 
-    #
-    # Date du dernier fichier traité
-    query = Connexion.objects.all().aggregate(Max('date'))
-    maxdate = datetime(query['date__max'].year, query['date__max'].month, query['date__max'].day - 1)
+    def handle(self, *args, **options):
+        self.stdout.write('Coucou !')
 
-    #
-    # Importe les connexions
-    #
-    processconnexions(config['path'], maxdate)
+        return
+        #
+        # Date du dernier fichier traité
+        query = Connexion.objects.all().aggregate(Max('date'))
+        maxdate = datetime(query['date__max'].year, query['date__max'].month, query['date__max'].day - 1)
+
+        #
+        # Importe les connexions
+        #
+        processconnexions(config['path'], maxdate)
 
 
 
