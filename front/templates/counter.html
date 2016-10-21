@@ -1,0 +1,55 @@
+{% extends 'layout.html' %}
+{% load staticfiles %}
+
+
+{% block breadcrumb %}
+	<li class='title'><a href="{% url 'counter' %}">Counter</a></li>
+{% endblock %}
+
+
+{% block content %}
+	<h1><i class="fa fa-github-alt"></i> COUNTER</h1>
+
+	<ul>
+		<li>Journale Report 1</li>
+		<li>Journale Report 1 GOA</li>
+		<li>Journale Report 1a</li>
+		<li>Journale Report 2</li>
+		<li>Journale Report 3</li>
+		<li>Journale Report 3 Mobile</li>
+		<li>Journale Report 4</li>
+		<li>Journale Report 5</li>
+		<li>Database Report 1</li>
+		<li>Database Report 2</li>
+		<li>Plateform Report 1</li>
+		<li>Book Report 1</li>
+		<li>Book Report 2</li>
+		<li>Book Report 3</li>
+		<li>Book Report 4</li>
+		<li>Book Report 5</li>
+		<li>Multimedia Report 1</li>
+		<li>Multimedia Report 2</li>
+		<li>Title Report 1</li>
+		<li>Title Report 1 Mobile</li>
+		<li>Title Report 2</li>
+		<li>Title Report 3</li>
+		<li>Title Report 3 Mobile</li>
+	</ul>
+
+	<a href="http://www.couperin.org/images/stories/documents/Statistiques/COUNTER/V4_FR/copr4_fr.pdf" target="_blank">Code de bonnes pratiques version 4</a>
+{%  endblock %}
+
+{% block script %}
+$(document).ready(function()
+{
+	$('table').DataTable(
+	{
+	});
+});
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'js/dataTables.bootstrap.js' %}"></script>
+{% endblock %}
+

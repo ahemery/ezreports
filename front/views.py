@@ -204,3 +204,11 @@ def liens_view(request):
         'liens': liens,
     })
 
+
+def counter_view(request):
+
+    return render(request, 'counter.html',
+    {
+    })
+
+

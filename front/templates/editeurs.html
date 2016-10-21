@@ -43,12 +43,14 @@
 						<thead>
 						<tr>
 							<th>Url</th>
+							<th></th>
 						</tr>
 						</thead>
 						<tbody>
 						{% for lien in liens %}
 							<tr>
 								<td><a href="{% url 'lien' slug=lien.slug %}">{{ lien.url }}</a></td>
+								<td><a href="http://{{ lien.url }}" target="_blank"><i class="fa fa-external-link"></i></a> </td>
 							</tr>
 						{% endfor %}
 						</tbody>
