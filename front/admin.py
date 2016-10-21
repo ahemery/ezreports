@@ -10,6 +10,7 @@ class EditeurAdmin(admin.ModelAdmin):
 class LienAdmin(admin.ModelAdmin):
     list_display = ('slug', 'url', 'ressource')
     ordering = ['slug']
+    list_filter = ['disabled']
 
 
 class RessourceAdmin(admin.ModelAdmin):
@@ -20,5 +21,3 @@ class RessourceAdmin(admin.ModelAdmin):
 admin.site.register(Editeur, EditeurAdmin)
 admin.site.register(Lien, LienAdmin)
 admin.site.register(Ressource, RessourceAdmin)
-# admin.site.register(Membership)
-# admin.site.register(admin.site)

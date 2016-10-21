@@ -27,22 +27,24 @@
 	</div>
 	<div class='row'>
 		<div class='col-lg-12'>
-			<form action="{% url 'dashboard' %}" method="get">
+			<form action="{% url 'login' %}" method="post">
+				{% csrf_token %}
 				<fieldset class='text-center'>
 					<legend>Se connecter</legend>
-					<div class='form-group'>
-						<input class='form-control' placeholder='Email...' type='text'>
+					<div class='form-group{% if login.errors %} has-error has-feedback{% endif %}'>
+						{{ login.username }}
+						{% if login.errors %}
+							<span class="glyphicon glyphicon-remove form-control-feedback"></span>
+						{% endif %}
 					</div>
-					<div class='form-group'>
-						<input class='form-control' placeholder='Mot de passe...' type='password'>
+					<div class='form-group{% if login.errors %} has-error has-feedback{% endif %}'>
+						{{ login.password }}
+						{% if login.errors %}
+							<span class="glyphicon glyphicon-remove form-control-feedback"></span>
+						{% endif %}
 					</div>
 					<div class='text-center'>
-						<div class='checkbox'>
-							<label><input type='checkbox'>Resté connecté ?</label>
-						</div>
-						<a class="btn btn-default" href="{% url 'dashboard' %}">Connexion</a>
-						<br>
-						<a href="forgot_password.html">Mot de passe oublié ?</a>
+						<input class="btn btn-default" value="Connexion" type="submit">
 					</div>
 				</fieldset>
 			</form>

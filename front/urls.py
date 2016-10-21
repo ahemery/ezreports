@@ -32,8 +32,8 @@ urlpatterns = [
 
     url(r'^counter/$', views.counter_view, name='counter'),
 
-    url(r'^login$', views.login_view, name='login'),
-    url(r'^logout$', views.logout_view, name='logout'),
+    url(r'^login/$', views.login_view, name='login'),
+    url(r'^logout/$', views.logout_view, name='logout'),
 
 
     url(r'^tables$', TemplateView.as_view(template_name='tables.html'), name="tables"),

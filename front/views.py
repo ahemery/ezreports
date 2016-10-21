@@ -6,21 +6,45 @@ from django.db.models import Count, F
 from django.db import connection
 from django.db.models.functions import TruncMonth
 import operator
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from django.shortcuts import render, redirect
+from .forms import *
+
 
 def login_view(request):
-    return render(request, 'login.html',
-    {
 
+    # Déjà authentifié, on affiche son profile
+    if request.user.is_authenticated():
+        return redirect('dashboard')
+
+    loginform = LoginForm(request.POST or None)
+    if loginform.is_valid and request.method == "POST":
+        data = loginform.data
+
+        user = authenticate(username=data.get('username'), password=data.get('password'))
+        if user is not None and user.is_active:
+            login(request, user)
+
+            return redirect('dashboard')
+        else:
+            loginform.add_error('username', 'Invalid credentials !')
+
+    return render(request, 'login.html', {
+        'login': loginform,
     })
 
 
 def logout_view(request):
+    logout(request)
+
     return render(request, 'logout.html',
     {
 
     })
 
 
+@login_required
 def dashboard_view(request):
 
     ressources = Lien.objects.all()
@@ -30,6 +54,7 @@ def dashboard_view(request):
     })
 
 
+@login_required
 def connexions_view(request):
 
     start = datetime.now() - timedelta(days=90)
@@ -119,6 +144,7 @@ def connexions_view(request):
     })
 
 
+@login_required
 def consultations_view(request):
 
     return render(request, 'consultations.html',
@@ -127,6 +153,7 @@ def consultations_view(request):
     })
 
 
+@login_required
 def ressources_view(request):
 
     liens = Lien.objects.all().order_by('url')
@@ -139,6 +166,7 @@ def ressources_view(request):
     })
 
 
+@login_required
 def ressource_view(request, slug):
 
     ressource = get_object_or_404(Ressource, slug=slug)
@@ -153,6 +181,7 @@ def ressource_view(request, slug):
     })
 
 
+@login_required
 def params_view(request):
 
     return render(request, 'params.html',
@@ -161,6 +190,7 @@ def params_view(request):
     })
 
 
+@login_required
 def editeur_view(request, slug):
 
     editeur = get_object_or_404(Editeur, slug=slug)
@@ -173,6 +203,7 @@ def editeur_view(request, slug):
     })
 
 
+@login_required
 def editeurs_view(request):
 
     editeurs = Editeur.objects.all() \
@@ -187,6 +218,7 @@ def editeurs_view(request):
     })
 
 
+@login_required
 def lien_view(request, slug):
     lien = get_object_or_404(Lien, slug=slug)
 
@@ -196,6 +228,7 @@ def lien_view(request, slug):
     })
 
 
+@login_required
 def liens_view(request):
     liens = Lien.objects.all().order_by('url')
 
@@ -205,6 +238,7 @@ def liens_view(request):
     })
 
 
+@login_required
 def counter_view(request):
 
     return render(request, 'counter.html',
