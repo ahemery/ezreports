@@ -1,5 +1,8 @@
 .idea/
 env/
+docs/
+csv/
+logs/
 ezreports/config.py
 ezreports/config.prod.py
 *.pyc

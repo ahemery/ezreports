@@ -1,12 +1,12 @@
 import glob
 from datetime import datetime
 import re
-import json
 import os
 from django.db import connection
+from front.models import *
+from django.db.models import Max
 
-
-conf = {
+config = {
   "ldap": {
     "server": "ldap.univ-pau.fr",
     "dn": "cn=consultplus,ou=admin,dc=univ-pau,dc=fr",
@@ -22,15 +22,11 @@ conf = {
     ],
     "debug": "false"
   },
-  "path": "/mnt/data/dev/scd/ezpaarse/logs/*.log",
+  "path": "/mnt/data/dev/scd/ezreports/logs/*.log",
 }
 
 
-def run():
-
-    print("toto")
-    return
-
+def processconnexions(maxdate):
     # Expression régulière pour les log d'ezproxy
     regex = "^(?P<ip>(?:[0-9]{1,3}\.){3}[0-9]{1,3}) - " \
             "(?P<login>[0-9a-zA-Z]*) .*" \
@@ -38,20 +34,19 @@ def run():
             "https?://w*\.?(?P<url>.[^/]*)/(?P<path>.*) HTTP/1.1.*"
     login = re.compile(regex)
 
+    # Pour chaque fichier de log à traiter
+    for logfile in sorted(glob.glob(config['path'])):
 
-    config = json.load(open('config.json'))
-    bases = config['bases']
+        # format du fichier 'ezproxy-YYYY.MM.DD.log'
+        filename = os.path.split(logfile)[1]
+        filedate = datetime.strptime(filename, 'ezproxy-%Y.%m.%d.log')
 
-    #try:
-        # Connexion à la base sql
-        # conn = mysql.connector.connect(**config['sql'])
-        # sql = conn.cursor()
-    with connection.cursor() as cursor:
+        if filedate <= maxdate:
+            continue
 
-        # Pour chaque fichier de log à traiter
-        for logfile in sorted(glob.glob(config['path'])):
+        print("{}: ".format(os.path.basename(logfile)))
 
-            print("{}: ".format(os.path.basename(logfile)))
+        with connection.cursor() as cursor:
 
             # Ouvre le fichier
             with open(logfile) as handle:
@@ -94,11 +89,12 @@ def run():
                         cursor.commit()
 
 
-        # sql.close()
-        # conn.close()
+def run():
 
-    # except mysql.connector.Error as err:
-    #     print("Something went wrong: {}".format(err))
+    # Date du dernier fichier traité
+    max = Connexion.objects.all().aggregate(Max('date'))
+    maxdate = datetime(max['date__max'].year, max['date__max'].month, max['date__max'].day - 1)
+    processconnexions(maxdate)
 
 
 
