@@ -50,6 +50,7 @@ class Lien(models.Model):
     url = models.CharField(max_length=250, null=False, unique=True)
     ressource = models.ForeignKey(Ressource, null=True, default=None)
     slug = models.SlugField(unique=True)
+    disabled = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.url)

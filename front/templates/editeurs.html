@@ -8,7 +8,6 @@
 
 
 {% block content %}
-	<h1><i class="fa fa-stack-overflow"></i> Editeurs</h1>
 
 	<div class="row">
 		<div class="col-md-6">
@@ -66,6 +65,11 @@ $(document).ready(function()
 {
 	$('table').DataTable(
 	{
+		bLengthChange: false,
+		bFilter: true,
+		bInfo: true,
+		bAutoWidth: true,
+		stateSave: true,
 	});
 });
 {% endblock %}

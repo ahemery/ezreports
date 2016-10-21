@@ -27,7 +27,7 @@ urlpatterns = [
     url(r'^ressources/$', views.ressources_view, name='ressources'),
     url(r'^ressource/(?P<slug>[\w\-]+)/$', views.ressource_view, name='ressource'),
 
-    url(r'^lien/(?P<slug>[\w\-]+)/$', views.lien_view, name='lien'),
+    url(r'^liens/$', views.liens_view, name='liens'),
     url(r'^lien/(?P<slug>[\w\-]+)/$', views.lien_view, name='lien'),
 
     url(r'^counter/$', views.counter_view, name='counter'),
