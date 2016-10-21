@@ -1,12 +1,10 @@
-from django.conf.urls import url
 from . import views
-from django.views.generic import TemplateView
-from django.template import RequestContext
-from django.shortcuts import render_to_response
 from django.conf import settings
 from django.conf.urls import include, url
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+from django.views.generic import TemplateView
 import debug_toolbar
-
 
 #
 # Gestion du 404
@@ -34,6 +32,11 @@ urlpatterns = [
 
     url(r'^login$', views.login_view, name='login'),
     url(r'^logout$', views.logout_view, name='logout'),
+
+
+    url(r'^tables$', TemplateView.as_view(template_name='tables.html'), name="tables"),
+    url(r'^forms$', TemplateView.as_view(template_name='forms.html'), name="forms"),
+
 
     url(r'^__debug__/', include(debug_toolbar.urls)),
 ]
