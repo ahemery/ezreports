@@ -2,7 +2,7 @@
 env/
 docs/
 csv/
-logs/
+proxy_logs/
 ezreports/config.py
 ezreports/config.prod.py
 *.pyc

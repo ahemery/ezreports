@@ -1,4 +1,3 @@
-from django.core.management.base import BaseCommand
 import glob
 from datetime import datetime
 import re
@@ -6,6 +5,8 @@ import os
 from django.db import connection
 from front.models import *
 from django.db.models import Max
+from datetime import date, timedelta
+from django.core.management.base import BaseCommand, CommandError
 
 config = {
   "ldap": {
@@ -23,16 +24,16 @@ config = {
     ],
     "debug": "false"
   },
-  "path": "/mnt/data/dev/scd/ezreports/logs/*.log",
+  "path": "/mnt/data/dev/scd/ezreports/proxy_logs/*.log",
 }
 
 
-def processconnexions(path, maxdate):
+def processconnexions(path, mindate):
     """
     Récupère les connexions à partir du fichier de log d'ezproxy
 
     :param path Chemin d'accès des fichiers de log
-    :param maxdate: Date à partir de laquelle on traite les connexions
+    :param mindate: Date à partir de laquelle on traite les connexions
     :return:
     """
 
@@ -50,7 +51,7 @@ def processconnexions(path, maxdate):
         filename = os.path.split(logfile)[1]
         filedate = datetime.strptime(filename, 'ezproxy-%Y.%m.%d.log')
 
-        if filedate <= maxdate:
+        if filedate < mindate:
             continue
 
         print("{}: ".format(os.path.basename(logfile)))
@@ -100,21 +101,35 @@ def processconnexions(path, maxdate):
 
 class Command(BaseCommand):
     args = '<team_id>'
-    help = 'Affiche la liste des backlogs'
+    help = 'Process raw logs from the reverse proxy and import them in database'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--min-date',
+                            help="Everything before this date is ignored (dd/mm/yyyy)",
+                            default=date.today() - timedelta(1),
+                            required=False)
 
     def handle(self, *args, **options):
-        self.stdout.write('Coucou !')
-
-        return
-        #
-        # Date du dernier fichier traité
-        query = Connexion.objects.all().aggregate(Max('date'))
-        maxdate = datetime(query['date__max'].year, query['date__max'].month, query['date__max'].day - 1)
+        # Si aucun argument, on prend depuis la dernière date en base
+        if not options['min_date']:
+            #
+            # Date du dernier fichier traité
+            query = Connexion.objects.all().aggregate(Max('date'))
+            mindate = datetime(query['date__max'].year, query['date__max'].month, query['date__max'].day - 1)
+        else:
+            try:
+                mindate = datetime.strptime(options['min_date'], '%d/%m/%Y',)
+            except ValueError:
+                raise CommandError('Invalide min-date format !')
 
         #
         # Importe les connexions
         #
-        processconnexions(config['path'], maxdate)
+        processconnexions(config['path'], mindate)
+
+        #
+        # Envoie les données au serveur EZPaarse
+        #
 
 
 
