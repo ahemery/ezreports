@@ -4,12 +4,19 @@ from django.shortcuts import get_object_or_404, render
 from datetime import datetime, timedelta
 from django.db.models import Count, F
 from django.db import connection
-from django.db.models.functions import TruncMonth
-import operator
+from django.db.models.functions import TruncMonth, TruncYear
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render, redirect
 from .forms import *
+from django.http import HttpResponseForbidden
+from django.template import RequestContext, loader
+
+
+def forbidden(request, template='403.html'):
+    """Default 403 handler"""
+    t = loader.get_template(template)
+    return HttpResponseForbidden(t.render(RequestContext(request)))
 
 
 def login_view(request):
@@ -96,28 +103,36 @@ def connexions_view(request):
 
                 GROUP BY r.id, year(c.date)
         ) sub                              ON sub.editeur_id = e.id
-        								   and sub.year = year(c.date)
+                                           and sub.year = year(c.date)
 
         LEFT JOIN
         (
-	        select COUNT(c.id) AS total, year(c.date) as year
-	        FROM editeurs e
+            select COUNT(c.id) AS total, year(c.date) as year
+            FROM editeurs e
 
-	        LEFT JOIN `ressources` r          ON e.id = r.editeur_id
-	        LEFT JOIN `liens` l               ON r.id = l.ressource_id
-	        LEFT JOIN `connexions` c          ON l.id = c.lien_id
+            LEFT JOIN `ressources` r          ON e.id = r.editeur_id
+            LEFT JOIN `liens` l               ON r.id = l.ressource_id
+            LEFT JOIN `connexions` c          ON l.id = c.lien_id
 
-			  GROUP BY year(c.date)
+            GROUP BY year(c.date)
 
         ) as total on total.year = year(c.date)
 
         WHERE year(c.date) = %s
 
         GROUP BY e.id , sub.id, total.total, sub.connexions
-        HAVING ratio > 1
-        ORDER BY ratio desc
+        HAVING editeur_ratio > 1.5
+        ORDER BY editeur_ratio desc
         """, [2016])
         res = cursor.fetchall()
+
+        cursor.execute("""
+        select year(c.date) as annee, month(c.date) as mois, count(*) as total
+        from connexions c
+
+        group by year(c.date), month(c.date)
+        order by annee, mois""")
+        res2 = cursor.fetchall()
 
     donut = {}
     for r in res:
@@ -135,12 +150,19 @@ def connexions_view(request):
             'ratio': r[6],
         }
 
-    return render(request, 'connexions.html',
-    {
-        'connexions': connexions,
+    conn = {}
+    for r in res2:
+        if not r[0] in conn:
+            conn[r[0]] = {1: 'null', 2: 'null', 3: 'null', 4: 'null', 5: 'null', 6: 'null',
+                          7: 'null', 8: 'null', 9: 'null', 10: 'null', 11: 'null', 12: 'null'}
+        conn[r[0]][r[1]] = r[2]
+
+    return render(request, 'connexions.html', {
+        # 'connexions': connexions,
         'start': start,
         'tops': tops,
         'donut': sorted(donut.items(), key=lambda x: x[1]['total'], reverse=True),
+        'connexions': conn,
     })
 
 
@@ -207,12 +229,14 @@ def editeur_view(request, slug):
 def editeurs_view(request):
 
     editeurs = Editeur.objects.all() \
-        .annotate(ressources=Count('ressource__editeur')) \
+        .annotate(ressources=Count('ressource')) \
         .order_by('libelle')
-    liens = Lien.objects.filter(ressource=None).order_by('url')
+    liens = Lien.objects \
+        .values('url', 'slug') \
+        .filter(disabled=False, ressource=None)\
+        .order_by('slug')
 
-    return render(request, 'editeurs.html',
-    {
+    return render(request, 'editeurs.html', {
         'editeurs': editeurs,
         'liens': liens,
     })
@@ -220,11 +244,15 @@ def editeurs_view(request):
 
 @login_required
 def lien_view(request, slug):
-    lien = get_object_or_404(Lien, slug=slug)
 
-    return render(request, 'lien.html',
-    {
-        'lien': lien,
+    instance = get_object_or_404(Lien, slug=slug)
+    form = LienForm(request.POST or None, instance=instance)
+    if form.is_valid() and request.method == "POST":
+        form.save()
+
+    return render(request, 'lien.html', {
+        'instance': instance,
+        'form': form,
     })
 
 

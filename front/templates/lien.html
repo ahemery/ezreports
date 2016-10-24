@@ -4,12 +4,47 @@
 
 {% block breadcrumb %}
 	<li class='title'><a href="{% url 'liens' %}">Liens</a></li>
-	<li class='title'>{{ lien.url }}</li>
+	<li class='title'>{{ instance.url }}</li>
 {% endblock %}
 
 
 {% block content %}
-	{{ lien }}
+	<div class="row">
+		<div class="col-md-4">
+			<div class='panel panel-default'>
+				<div class='panel-heading'><i class='fa fa-download'></i> Attribuer à une ressource</div>
+				<div class='panel-body'>
+					<form class="form-horizontal" method="post">
+						{% for field in form.hidden_fields %}
+							{{ field }}
+						{% endfor %}
+						{%  csrf_token %}
+						<div class="form-group">
+							<label for="id_ressource" class="col-sm-2 control-label">{{ form.ressource.label }}</label>
+							<div class="col-sm-10">
+								{{ form.ressource }}
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="col-sm-offset-2 col-sm-10">
+								<div class="checkbox">
+									<label>
+										{{ form.disabled }} {{ form.disabled.label }}
+									</label>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="col-sm-offset-2 col-sm-10">
+								<button type="submit" class="btn btn-primary pull-right">Sauvegarder</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+	{{ form.errors }}
 {%  endblock %}
 
 {% block script %}

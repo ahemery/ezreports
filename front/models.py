@@ -39,16 +39,17 @@ class Ressource(models.Model):
         return 'ressource', [self.slug]
 
     def __str__(self):
-        return self.slug
+        return self.libelle
 
     class Meta:
         db_table = "ressources"
+        # ordering = ['libelle']
 
 
 class Lien(models.Model):
     id = models.AutoField(primary_key=True)
     url = models.CharField(max_length=250, null=False, unique=True)
-    ressource = models.ForeignKey(Ressource, null=True, default=None)
+    ressource = models.ForeignKey(Ressource, null=True, default=None, blank=True)
     slug = models.SlugField(unique=True)
     disabled = models.BooleanField(default=False)
 

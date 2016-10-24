@@ -12,16 +12,7 @@
 
 		<div class="col-md-6">
 			<div class='panel panel-default'>
-				<div class='panel-heading'><i class='fa fa-bar-chart fa fa-large'></i> Depuis les 90 derniers jours <div class='panel-tools'>
-						{#					<div class='btn-group'>#}
-						{#						<a class='btn' href='#'>#}
-						{#							<i class='fa fa-refresh'></i>#}
-						{#							Refresh statics#}
-						{#						</a>#}
-						{#						<a class='btn' data-toggle='toolbar-tooltip' href='#' title='Toggle'>#}
-						{#							<i class='fa fa-chevron-down'></i>#}
-						{#						</a>#}
-						{#					</div>#}
+				<div class='panel-heading'><i class='fa fa-bar-chart fa fa-large'></i> Connexions par années <div class='panel-tools'>
 					</div>
 				</div>
 				<div class='panel-body'>
@@ -76,20 +67,14 @@
 	$(document).ready( function()
 	{
 		$('#months').highcharts({
-			chart: {
-				type: 'area'
-			},
 			credits: {
 				enabled: false,
 			},
 			title: {
 				text: 'Connexions aux ressources'
 			},
-			subtitle: {
-				text: 'Sur les 90 derniers jours'
-			},
 			xAxis: {
-				type: 'datetime',
+            categories: ['Janvier', 'Février', 'Mars', 'ApAvril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
 			},
 			yAxis: {
 				allowDecimals: false,
@@ -97,29 +82,14 @@
 					text: 'Connexions'
 				},
 			},
-			tooltip: {
-				pointFormat: '<b>{point.y:,.0f}</b> connexions'
+			series: [
+			{% for y, m in connexions.items %}
+			{
+				name: '{{ y }}',
+				data: [{% for k, v in m.items %}{{ v }}, {% endfor %}]
 			},
-			plotOptions: {
-				area: {
-					marker: {
-						enabled: false,
-						symbol: 'circle',
-						radius: 2,
-						states: {
-							hover: {
-								enabled: true
-							}
-						}
-					}
-				}
-			},
-			series: [{
-				showInLegend: false,
-				pointStart: Date.UTC({{ start.year }}, {{ start.month }} - 1, {{ start.day }}),
-				pointInterval: 24 * 3600 * 1000,
-				data: [{% for connexion in connexions %}{{ connexion.total}}, {% endfor %}]
-			}]
+			{% endfor %}
+			]
 		});
 
 
