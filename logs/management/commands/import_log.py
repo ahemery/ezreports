@@ -1,21 +1,23 @@
+import csv
 import glob
-from datetime import datetime
-import re
 import os
-from django.db import connection
-from front.models import *
-from django.db.models import Max
-from datetime import date, timedelta
+import pycurl
+import re
+import ldap3
+from datetime import date, timedelta, datetime
+from dateutil.parser import parse
 from django.core.management.base import BaseCommand, CommandError
+from django.db import connection
+from django.db.models import Max
 from django.utils.text import slugify
-
+from front.models import *
 
 config = {
   "ldap": {
     "server": "ldap.univ-pau.fr",
-    "dn": "cn=consultplus,ou=admin,dc=univ-pau,dc=fr",
-    "pw": "uppaplus",
-    "code": "ou=people,dc=univ-pau,dc=fr"
+    "user": "cn=consultplus,ou=admin,dc=univ-pau,dc=fr",
+    "pwd": "uppaplus",
+    "base": "ou=people,dc=univ-pau,dc=fr"
   },
   "ezpaarse": {
     "server": "http://ezpaarse.univ-pau.fr",
@@ -26,15 +28,34 @@ config = {
     ],
     "debug": "false"
   },
-  "path": "/mnt/data/dev/scd/ezreports/proxy_logs/*.log",
+  "logpath": "/mnt/data/dev/scd/ezreports/proxy_logs/*.log",
+  "csvpath": "/mnt/data/dev/scd/ezreports/csv/",
 }
 
 
-def processconnexions(handle):
+def querylaboratoire(ldap, name):
+
+    name = name.replace("\\", "\\5C")
+    name = name.replace("*", "\2A")
+    name = name.replace("(", "\\28")
+    name = name.replace(")", "\\29")
+    name = name.replace("\0", "\\00")
+    if not ldap.search(
+            'ou=structures,dc=univ-pau,dc=fr',
+            "(ou=" + name + ")",
+            attributes=['supannCodeEntite']):
+        return None
+
+    return ldap.entries[0].supannCodeEntite.value
+
+
+def connexions2sql(filename, sql):
     """
     Récupère les connexions à partir du fichier de log d'ezproxy
+    et les stocke en base
 
-    :param handle Handle du fichier à traiter
+    :param filename Nom du fichier à traiter
+    :param sql  Cursor sql
     :return:
     """
 
@@ -45,64 +66,54 @@ def processconnexions(handle):
             "https?://w*\.?(?P<url>.[^/]*)/(?P<path>.*) HTTP/1.1.*"
     login = re.compile(regex)
 
-    # # Pour chaque fichier de log à traiter
-    # for logfile in sorted(glob.glob(path)):
-    #
-    #     # format du fichier 'ezproxy-YYYY.MM.DD.log'
-    #     filename = os.path.split(logfile)[1]
-    #     filedate = datetime.strptime(filename, 'ezproxy-%Y.%m.%d.log')
-    #
-    #     if filedate < mindate:
-    #         continue
-    #
-    #     stdout.write("Processing connections from '{}'".format(os.path.basename(logfile)))
-    #
-    #     # Ouvre le fichier
-    #     with open(logfile) as handle:
-    #
-    with connection.cursor() as cursor:
+    # Ouvre le fichier
+    with open(filename) as file:
 
         # Pour chaque lignes
-        for line in handle:
+        for line in file:
 
             # Ca match ?
             match = login.match(line)
-            if match:
-                url = match.group("url")
-                date = datetime.strptime(match.group("datetime"), '%d/%b/%Y:%H:%M:%S %z')
+            if not match:
+                continue
 
-                # Insertion du lien si inconnu
-                cursor.execute(
-                    "INSERT INTO liens (url, slug, disabled) "
-                    "SELECT %(url)s, %(slug)s, 0 "
-                    "FROM (SELECT 1) as tmp "
-                    "WHERE NOT EXISTS(SELECT id FROM liens WHERE url = %(url)s or slug=%(slug)s) LIMIT 1 ",
-                    params={'url': url, 'slug': slugify(url)})
+            url = match.group("url")
+            date = datetime.strptime(match.group("datetime"), '%d/%b/%Y:%H:%M:%S %z')
 
-                # Insertion de l'utilisateur si inconnu
-                cursor.execute("INSERT INTO utilisateurs (hash) SELECT md5(%(login)s) "
-                        "FROM (SELECT 1) as tmp "
-                        "WHERE NOT EXISTS(SELECT id FROM utilisateurs WHERE hash = md5(%(login)s)) LIMIT 1 ",
-                    params={'login': match.group("login")})
+            # Insertion du lien si inconnu
+            sql.execute(
+                "INSERT INTO liens (url, slug, disabled) "
+                "SELECT %(url)s, %(slug)s, 0 "
+                "FROM (SELECT 1) as tmp "
+                "WHERE NOT EXISTS(SELECT id FROM liens WHERE url = %(url)s or slug=%(slug)s) LIMIT 1 ",
+                params={'url': url, 'slug': slugify(url)})
 
-                # Insertion de la connexion
-                cursor.execute("INSERT INTO connexions  "
-                        "SELECT NULL as id, %(date)s as date, %(time)s as time, md5(%(ip)s) as ip, "
-                        "l.id as lien_id, u.id as utilisateur_id  "
-                        "FROM utilisateurs u "
-                        "LEFT JOIN liens l           on l.url = %(url)s "
-                        "WHERE u.hash = md5(%(login)s) "
-                        "AND NOT EXISTS (SELECT utilisateur_id FROM connexions WHERE "
-                        "utilisateur_id = u.id AND lien_id = l.id AND date = %(date)s "
-                        "AND time = %(time)s AND ip = md5(%(ip)s))",
-                    params={'login': match.group("login"), 'url': url,
-                            'date': date.strftime("%Y-%m-%d"), 'time': date.strftime("%H:%M:%S"),
-                            'ip': match.group("ip")})
+            # Insertion de l'utilisateur si inconnu
+            sql.execute(
+                "INSERT INTO utilisateurs (hash) SELECT md5(%(login)s) "
+                "FROM (SELECT 1) as tmp "
+                "WHERE NOT EXISTS(SELECT id FROM utilisateurs WHERE hash = md5(%(login)s)) LIMIT 1 ",
+                params={'login': match.group("login")})
 
-                connection.commit()
+            # Insertion de la connexion
+            sql.execute(
+                "INSERT INTO connexions  "
+                "SELECT NULL as id, %(date)s as date, %(time)s as time, md5(%(ip)s) as ip, "
+                "l.id as lien_id, u.id as utilisateur_id  "
+                "FROM utilisateurs u "
+                "LEFT JOIN liens l           on l.url = %(url)s "
+                "WHERE u.hash = md5(%(login)s) "
+                "AND NOT EXISTS (SELECT utilisateur_id FROM connexions WHERE "
+                "utilisateur_id = u.id AND lien_id = l.id AND date = %(date)s "
+                "AND time = %(time)s AND ip = md5(%(ip)s))",
+                params={'login': match.group("login"), 'url': url,
+                        'date': date.strftime("%Y-%m-%d"), 'time': date.strftime("%H:%M:%S"),
+                        'ip': match.group("ip")})
+
+            connection.commit()
 
 
-def log2csv(filename, outputpath):
+def log2csv(filename):
     """
     Converti un fichier log en csv en l'envoyant à ezPAARSE
 
@@ -113,14 +124,16 @@ def log2csv(filename, outputpath):
 
     ez = config['ezpaarse']
 
-    now = datetime.datetime.now()
+    now = datetime.now()
     print(str(now) + " Log 2 CSV : \"" + filename + "\"...")
 
     # Extrait le nom du fichier et son chemin d'accès
     path, file = os.path.split(filename)
 
     # Nom du fichier de sortie
-    outfile = outputpath + os.path.splitext(file)[0] + '.csv'
+    outfile = config['csvpath'] + os.path.splitext(file)[0] + '.csv'
+
+    return outfile
 
     # On envoie le fichier de log à ezPAARSE
     with open(outfile, "wb") as handle:
@@ -135,246 +148,247 @@ def log2csv(filename, outputpath):
         c.perform()
         c.close()
 
-    # print("CSV saved to \"" + outfile + "\"")
-
     return outfile
 
 
-def csv2sql(filename):
+def csv2sql(filename, sql):
     """
     Importe les fichiers CSV produits par ezPAARSE dans une base SQL
 
     :param filename: Nom du fichier CSV à importer
+    :param sql      Connexion sql
 
     :return: Rien
     """
 
-    now = datetime.datetime.now()
-    print(str(now) + " CSV 2 SQL : \"" + filename + "\"")
+    # now = datetime.now()
+    print(str(datetime.now()) + " CSV 2 SQL : \"" + filename + "\"")
 
-    #
-    # Connexion à la base MySQL
-    try:
-        conn = mysql.connector.connect(**config['sql'])
-        sql = conn.cursor()
+    # Ouvre le fichier csv en lecture
+    with open(filename, 'r') as csvfile:
 
-        # Ouvre le fichier csv en lecture
-        with open(filename, 'rb') as csvfile:
+        #
+        # Connexion à l'annuaire LDAP
+        server = ldap3.Server(config['ldap']['server'])
+        ldap = ldap3.Connection(server,
+            user=config['ldap']['user'],
+            password=config['ldap']['pwd'],
+            auto_bind=True)
+
+        # Converti le fichier en format CSV
+        for row in csv.DictReader(csvfile, delimiter=';'):
+            #print(row)
+
+            csvhash = ""
+            for k, v in sorted(row.items()):
+                csvhash += v
+
+            # Variables
+            dt = parse(row["datetime"])
+            login = row["login"]
+
+            # Insertion des clefs étrangères
+            sql.execute("INSERT IGNORE INTO utilisateurs (hash) SELECT md5(%(login)s) "
+                        "FROM (SELECT 1) as tmp "
+                        "WHERE NOT EXISTS(SELECT id FROM utilisateurs WHERE hash = md5(%(login)s))",
+                        params={'login': login})
+
+            if row['publisher_name'] is not None and row['publisher_name'] is not None:
+                sql.execute("INSERT INTO editeurs (libelle, slug) SELECT %(libelle)s, %(slug)s "
+                            "FROM (SELECT 1) as tmp "
+                            "WHERE NOT EXISTS(SELECT id FROM editeurs WHERE slug = %(slug)s) LIMIT 1 ",
+                            params={'libelle': row["publisher_name"], 'slug': slugify(row['publisher_name'])})
+            # todo: Faire le lien entre la ressource et l'éditeur lors de la création d'une nouvelle ressource
+            if row['platform'] is not None and row['platform'] is not None:
+                sql.execute("INSERT INTO ressources (libelle, slug) SELECT %(libelle)s, %(slug)s "
+                            "FROM (SELECT 1) as tmp "
+                            "WHERE NOT EXISTS(SELECT id FROM ressources WHERE slug = %(slug)s) LIMIT 1 ",
+                            params={'slug': slugify(row["platform_name"]), 'libelle': row["platform_name"]})
+            if row['rtype'] is not None and row['rtype'] is not None:
+                sql.execute("INSERT INTO types (code) SELECT %(code)s "
+                            "FROM (SELECT 1) as tmp "
+                            "WHERE NOT EXISTS(SELECT id FROM types WHERE code = %(code)s) LIMIT 1 ",
+                            params={'code': row["rtype"]})
+            if row['mime'] is not None and row['mime'] is not None:
+                sql.execute("INSERT INTO formats (code) SELECT %(code)s "
+                            "FROM (SELECT 1) as tmp "
+                            "WHERE NOT EXISTS(SELECT id FROM formats WHERE code = %(code)s) LIMIT 1 ",
+                            params={'code': row["mime"]})
+
+            # Insertions des consultations
+            sql.execute("INSERT INTO consultations "
+                        "(JOUR, HEURE, UTILISATEUR_ID, RESSOURCE_ID, EDITEUR_ID, TYPE_ID, FORMAT_ID, HOST, HASH) "
+                        "SELECT %(jour)s, %(heure)s, u.id, r.id, e.id, t.id, f.id, %(host)s, sha1(%(hash)s) "
+                        "FROM (SELECT 1) as tmp "
+                        "LEFT JOIN utilisateurs u on u.hash = md5(%(login)s) "
+                        "LEFT JOIN ressources r on r.slug = %(ressource)s "
+                        "LEFT JOIN formats f on f.code = %(format)s "
+                        "LEFT JOIN types t on t.code = %(type)s "
+                        "LEFT JOIN editeurs e on e.slug = %(editeur)s "
+                        "WHERE NOT EXISTS(SELECT id FROM consultations WHERE hash = sha1(%(hash)s)) "
+                        "LIMIT 1 ",
+                        {
+                            'jour': dt.date(),
+                            'heure': dt.time(),
+                            'login': login,
+                            'ressource': slugify(row["platform_name"]),
+                            'editeur': slugify(row["publisher_name"]),
+                            'type': row["rtype"],
+                            'format': row["mime"],
+                            'host': row["host"],
+                            'hash': csvhash,
+                        })
+
+            ec_id = sql.lastrowid
+
+            # On a déjà inséré cette ligne, donc on passe à la suivante
+            if ec_id == 0:
+                continue
 
             #
-            # Connexion à l'annuaire LDAP
-            ldap = LDAPSingle(config["ldap"])
-            ldap.setBaseDN(config["ldap"]["base"])
+            # On récupère les informations LDAP du compte utilisateur
+            if not ldap.search(
+                'ou=people,dc=univ-pau,dc=fr',
+                "(uid=" + login + ")",
+                attributes=['supannEtuInscription', 'supannEntiteAffectationPrincipale', 'uppaCodeComp',
+                            'uppaDrhComposante', 'uppaProfil', 'uppaDrhLaboratoire']):
+                print("No ldap informations for \"" + login + "\"")
+                continue
 
-            # Converti le fichier en format CSV
-            for row in csv.DictReader(csvfile, delimiter=';'):
+            # todo: Vilain hack, bouuh !
+            infos = ldap.entries[0]._attributes
 
-                # Variables
-                dt = parse(row["datetime"])
-                login = row["login"]
+            #
+            # Converti le profil en tableau si ce n'est pas le cas
+            profils = infos["uppaProfil"].values if "uppaProfil" in infos else ["VIDE"]
+            for profil in profils:
+                composante_libelle = None
+                composante_code = None
+                laboratoire = None
+                laboratoire_code = None
+                diplome_libelle = None
+                diplome_code = None
+                cursus_annee = None
 
-                # Insertion des clefs étrangères
-                sql.execute("INSERT IGNORE INTO utilisateurs (hash) SELECT md5(%(login)s) "
-                            "FROM (SELECT 1) as tmp "
-                            "WHERE NOT EXISTS(SELECT id FROM utilisateurs WHERE hash = md5(%(login)s))",
-                            params={'login': login})
-
-                if row['platform'] != "" and row['platform'] is not None:
-                    sql.execute("INSERT INTO plateformes (code, libelle) SELECT %(code)s, %(libelle)s "
-                                "FROM (SELECT 1) as tmp "
-                                "WHERE NOT EXISTS(SELECT id FROM plateformes WHERE code = %(code)s) LIMIT 1 ",
-                                params={'code': row["platform"], 'libelle': row["platform_name"]})
-                if row['rtype'] != "" and row['rtype'] is not None:
-                    sql.execute("INSERT INTO types (code) SELECT %(code)s "
-                                "FROM (SELECT 1) as tmp "
-                                "WHERE NOT EXISTS(SELECT id FROM types WHERE code = %(code)s) LIMIT 1 ",
-                                params={'code': row["rtype"]})
-                if row['mime'] != "" and row['mime'] is not None:
-                    sql.execute("INSERT INTO formats (code) SELECT %(code)s "
-                                "FROM (SELECT 1) as tmp "
-                                "WHERE NOT EXISTS(SELECT id FROM formats WHERE code = %(code)s) LIMIT 1 ",
-                                params={'code': row["mime"]})
-                if row['publisher_name'] != "" and row['publisher_name'] is not None:
-                    sql.execute("INSERT INTO editeurs (libelle) SELECT %(libelle)s "
-                                "FROM (SELECT 1) as tmp "
-                                "WHERE NOT EXISTS(SELECT id FROM editeurs WHERE libelle = %(libelle)s) LIMIT 1 ",
-                                params={'libelle': row["publisher_name"]})
-
-                # Insertions des EC
-                try:
-                    hash = ""
-                    for k, v in enumerate(row):
-                        hash += row[v]
-
-                    sql.execute("INSERT INTO ec "
-                                "(DATE, TIME, LOGIN, PLATFORME_ID, EDITEUR_ID, TYPE_ID, FORMAT_ID, HOST, HASH) "
-                                "SELECT %(date)s, %(time)s, u.id, p.id, e.id, t.id, m.id, "
-                                "%(host)s, sha1(%(hash)s) "
-                                "FROM (SELECT 1) as tmp "
-                                "LEFT JOIN utilisateurs u on u.hash = md5(%(login)s) "
-                                "LEFT JOIN plateformes p on p.code = %(platform)s "
-                                "LEFT JOIN formats m on m.code = %(format)s "
-                                "LEFT JOIN types t on t.code = %(rtype)s "
-                                "LEFT JOIN editeurs e on e.libelle = %(publisher)s "
-                                "WHERE NOT EXISTS(SELECT id FROM ec WHERE hash = sha1(%(hash)s)) "
-                                "LIMIT 1 ",
-                                {
-                                    'date': dt.date(),
-                                    'time': dt.time(),
-                                    'login': login,
-                                    'platform': row["platform"],
-                                    'platform_name': row["platform_name"],
-                                    'publisher': row["publisher_name"],
-                                    'rtype': row["rtype"],
-                                    'format': row["mime"],
-                                    'host': row["host"],
-                                    'hash': hash,
-                                })
-                except mysql.connector.Error as err:
-                    print("Something went wrong: {}".format(err))
-                    continue
-
-                ec_id = sql.lastrowid
-
-                # On a déjà inséré cette ligne, donc on passe à la suivante
-                if ec_id == 0:
-                    continue
+                if profil == "VIDE":
+                    composante_code = infos["uppaCodeComp"]
+                    composante_libelle = infos["uppaDrhComposante"]
 
                 #
-                # On récupère les informations LDAP du compte utilisateur
-                infos = ldap.getInfos("uid=" + login, ['supannEtuInscription', 'supannEntiteAffectationPrincipale',
-                                                       'uppaCodeComp', 'uppaDrhComposante', 'uppaProfil', 'uppaDrhLaboratoire'])
-                if len(infos) != 1:
-                    print("No ldap informations for \"" + login + "\"")
-                    continue
-                infos = infos[0]
-
-                #
-                # Converti le profil en tableau si ce n'est pas le cas
-                profils = infos["uppaProfil"] if infos.has_key("uppaProfil") else ["VIDE"]       # Cas des comptes sans profil
-                profils = profils if isinstance(profils, list) else [profils]
-                for profil in profils:
-                    composante_libelle = None
-                    composante_code = None
-                    laboratoire = None
-                    diplome_libelle = None
-                    diplome_code = None
-                    cursus_annee = None
-
-                    if profil == "VIDE":
-                        composante_code = infos["uppaCodeComp"]
-                        composante_libelle = infos["uppaDrhComposante"]
-
-                        pass
-
-                    #
-                    # Profil étudiant
-                    elif profil in ("ETU", "AE0", "AE1", "AE2", "AET", "AEP"):
-                        if infos.has_key("supannEtuInscription"):
-                            # Eclate le champ supannEtuInscription
-                            inscription = infos["supannEtuInscription"][0] if isinstance(infos["supannEtuInscription"], list) else infos["supannEtuInscription"]
-                            inscription = inscription.replace("[", "").split("]")
-                            for insc in inscription:
-                                d = insc.split("=")
+                # Profil étudiant
+                elif profil in ("ETU", "AE0", "AE1", "AE2", "AET", "AEP"):
+                    if "supannEtuInscription" in infos:
+                        # Eclate le champ supannEtuInscription
+                        inscriptions = infos["supannEtuInscription"].values
+                        for insc in inscriptions:
+                            insc = insc.replace("[", "").split("]")
+                            for d in insc:
+                                d = d.split("=")
                                 if d[0] == "cursusann":
                                     cursus_annee = d[1].replace("{SUPANN}", "")
                                 if d[0] == "libDiplome":
                                     diplome_libelle = d[1]
                                 if d[0] == "diplome":
                                     diplome_code = d[1].replace("{SISE}", "")
-                        else:
-                            cursus_annee = ""
-                            diplome_libelle = infos["uppaDrhComposante"] if infos.has_key("uppaDrhComposante") else ""
-                            if isinstance(diplome_libelle, list):
-                                diplome_libelle = diplome_libelle[0]
+                    else:
+                        cursus_annee = ""
+                        diplome_libelle = infos["uppaDrhComposante"] if "uppaDrhComposante" in infos else None
+                        if isinstance(diplome_libelle, list):
+                            diplome_libelle = diplome_libelle[0]
 
-                            diplome_code = infos["uppaCodeComp"] if "uppaCodeComp" in infos else ""
-                            if isinstance(diplome_code, list):
-                                diplome_code = diplome_code[0]
+                        diplome_code = infos["uppaCodeComp"] if "uppaCodeComp" in infos else None
+                        if isinstance(diplome_code, list):
+                            diplome_code = diplome_code[0]
 
+                #
+                # Profil personnel
+                elif profil in ("PER", "DOC", "VAC", "INV", "APE", "HEB", "ANC", "APH", "CET", "EME", "LEC",
+                                      "PVA", "PAD", "PEC", "STA", "ADM", "AP0", "PAR", "PPE", "ADC", "RSS", "AD0"):
                     #
-                    # Profil personnel
-                    elif profil in ("PER", "DOC", "VAC", "INV", "APE", "HEB", "ANC", "APH", "CET", "EME", "LEC", "PVA",
-                                    "PAD", "PEC", "STA", "ADM", "AP0", "PAR", "PPE", "ADC", "RSS", "AD0"):
-                        # Trouve la composante en fonction de supannEntiteAffectationPrincipale
-                        if infos.has_key("supannEntiteAffectationPrincipale"):
-                            composante_code = infos["supannEntiteAffectationPrincipale"]
+                    # Composante
+                    if "supannEntiteAffectationPrincipale" in infos:
+                        composante_code = infos["supannEntiteAffectationPrincipale"].value
 
-                            if isinstance(infos["uppaCodeComp"], list):
-                                for id, code in enumerate(infos["uppaCodeComp"]):
-                                    if code == composante_code:
-                                        composante_libelle = infos["uppaDrhComposante"][id]
-                                        break
-                            else:
-                                composante_libelle = infos["uppaDrhComposante"]
-
+                        if len(infos["uppaCodeComp"]) > 1:
+                            for id, code in enumerate(infos["uppaCodeComp"]):
+                                if code == composante_code:
+                                    composante_libelle = infos["uppaDrhComposante"][id]
+                                    break
                         else:
-                            composante_code = infos["uppaCodeComp"] if infos.has_key("uppaCodeComp") else ""
-                            composante_libelle = infos["uppaDrhComposante"] if infos.has_key("uppaDrhComposante") else ""
-
-                        #
-                        # Laboratoire
-                        if infos.has_key("uppaDrhLaboratoire"):
-                            laboratoire = infos["uppaDrhLaboratoire"][0] if isinstance(infos["uppaDrhLaboratoire"], list) else infos["uppaDrhLaboratoire"]
+                            composante_libelle = infos["uppaDrhComposante"].value
 
                     else:
-                        #print("Profil non géré : " + profil)
-                        continue
+                        composante_code = infos["uppaCodeComp"].value if "uppaCodeComp" in infos else ""
+                        composante_libelle = infos["uppaDrhComposante"].value if "uppaDrhComposante" in infos else ""
 
                     #
-                    # Insère les données manquants
-                    sql.execute("INSERT INTO profils (code) SELECT %(code)s "
+                    # Laboratoire
+                    if "uppaDrhLaboratoire" in infos:
+                        laboratoire = infos["uppaDrhLaboratoire"][0].value \
+                            if isinstance(infos["uppaDrhLaboratoire"], list) else infos["uppaDrhLaboratoire"].value
+
+                        # todo: Par défaut, prend le premier enregistrement
+                        if isinstance(laboratoire, list):
+                            laboratoire = laboratoire[0]
+
+                        laboratoire_code = querylaboratoire(ldap, laboratoire)
+                else:
+                    #print("Profil non géré : " + profil)
+                    continue
+
+                #
+                # Insère les données manquants
+                sql.execute("INSERT INTO profils (code) SELECT %(code)s "
+                            "FROM (SELECT 1) as tmp "
+                            "WHERE NOT EXISTS(SELECT id FROM profils WHERE code = %(code)s) LIMIT 1 ",
+                            params={'code': profil})
+
+                if composante_code is not None and composante_code != 0 \
+                        and composante_libelle is not None and composante_libelle != "":
+                    sql.execute("INSERT INTO composantes (code, libelle) "
+                                "SELECT %(code)s, %(libelle)s "
                                 "FROM (SELECT 1) as tmp "
-                                "WHERE NOT EXISTS(SELECT id FROM profils WHERE code = %(code)s) LIMIT 1 ",
-                                params={'code': profil})
+                                "WHERE NOT EXISTS(SELECT code FROM composantes WHERE code = %(code)s) LIMIT 1 ",
+                                {'code': composante_code, 'libelle': composante_libelle})
 
-                    if composante_code is not None and composante_code != 0 and composante_libelle is not None and composante_libelle != "":
-                        sql.execute("REPLACE INTO composantes (id, libelle) VALUES (%(id)s, %(libelle)s)",
-                                    {'id': composante_code, 'libelle': composante_libelle})
+                if diplome_code is not None and diplome_libelle is not None:
+                    sql.execute("REPLACE INTO diplomes (code, libelle) SELECT %(code)s, %(libelle)s "
+                                "FROM (SELECT 1) as tmp "
+                                "WHERE NOT EXISTS(SELECT id FROM diplomes WHERE code = %(code)s) LIMIT 1 ",
+                                {'code': diplome_code, 'libelle': diplome_libelle})
 
-                    if diplome_code is not None and diplome_libelle is not None:
-                        sql.execute("REPLACE INTO diplomes (code, libelle) SELECT %(code)s, %(libelle)s "
-                                    "FROM (SELECT 1) as tmp "
-                                    "WHERE NOT EXISTS(SELECT id FROM diplomes WHERE code = %(code)s) LIMIT 1 ",
-                                    {'code': diplome_code, 'libelle': diplome_libelle})
+                if cursus_annee != "" and cursus_annee is not None:
+                    sql.execute("INSERT INTO cursus (code) SELECT %(code)s "
+                                "FROM (SELECT 1) as tmp "
+                                "WHERE NOT EXISTS(SELECT id FROM cursus WHERE code = %(code)s) LIMIT 1 ",
+                                params={'code': cursus_annee})
 
-                    if cursus_annee != "" and cursus_annee is not None:
-                        sql.execute("INSERT INTO cursus (code) SELECT %(code)s "
-                                    "FROM (SELECT 1) as tmp "
-                                    "WHERE NOT EXISTS(SELECT id FROM cursus WHERE code = %(code)s) LIMIT 1 ",
-                                    params={'code': cursus_annee})
+                if laboratoire != "" and laboratoire is not None:
+                    sql.execute("INSERT INTO laboratoires (code, libelle) SELECT %(code)s, %(libelle)s "
+                                "FROM (SELECT 1) as tmp "
+                                "WHERE NOT EXISTS(SELECT id FROM laboratoires WHERE code = %(code)s "
+                                "or libelle = %(libelle)s) LIMIT 1 ",
+                                params={'code': laboratoire_code, 'libelle': laboratoire})
 
-                    if laboratoire != "" and laboratoire is not None:
-                        sql.execute("INSERT INTO laboratoires (libelle) SELECT %(libelle)s "
-                                    "FROM (SELECT 1) as tmp "
-                                    "WHERE NOT EXISTS(SELECT id FROM laboratoires WHERE libelle = %(libelle)s) LIMIT 1 ",
-                                    params={'libelle': laboratoire})
+                sql.execute("INSERT IGNORE INTO meta "
+                            "(consultation_id, profil_id, composante_id, laboratoire_id, diplome_id, cursus_id) "
+                            "SELECT %(consultation)s, p.id, co.id, l.id, d.id, c.id "
+                            "FROM profils p "
+                            "LEFT JOIN laboratoires l on l.libelle = %(laboratoire)s "
+                            "LEFT JOIN diplomes d on d.code = %(diplome)s "
+                            "LEFT JOIN cursus c on c.code = %(cursus)s "
+                            "LEFT JOIN composantes co on co.id = %(composante)s "
+                            "WHERE p.code = %(profil)s",
+                            {
+                                'consultation': ec_id,
+                                'profil': profil,
+                                'composante': composante_code,
+                                'laboratoire': laboratoire,
+                                'diplome': diplome_code,
+                                'cursus': cursus_annee
+                            })
 
-                    sql.execute("INSERT IGNORE INTO meta (ec_id, profil_id, composante_id, laboratoire_id, diplome_id, cursus_id) "
-                                "SELECT %(ec_id)s, p.id, co.id, l.id, d.id, c.id "
-                                "FROM profils p "
-                                "LEFT JOIN laboratoires l on l.libelle = %(laboratoire)s "
-                                "LEFT JOIN diplomes d on d.code = %(diplome)s "
-                                "LEFT JOIN cursus c on c.code = %(cursus)s "
-                                "LEFT JOIN composantes co on co.id = %(composante)s "
-                                "WHERE p.code = %(profil)s",
-                                {
-                                    'ec_id': ec_id,
-                                    'profil': profil,
-                                    'composante': composante_code,
-                                    'laboratoire': laboratoire,
-                                    'diplome': diplome_code,
-                                    'cursus': cursus_annee
-                                })
-
-                    conn.commit()
-
-        sql.close()
-        conn.close()
-
-    except mysql.connector.Error as err:
-        print(err)
-        exit()
+                connection.commit()
 
 
 class Command(BaseCommand):
@@ -400,30 +414,35 @@ class Command(BaseCommand):
             except ValueError:
                 raise CommandError('Invalide min-date format !')
 
-            # Pour chaque fichier de log à traiter
-            for logfile in sorted(glob.glob(config['path'])):
+        # Connexion SQL
+        sql = connection.cursor()
 
-                # format du fichier 'ezproxy-YYYY.MM.DD.log'
-                filename = os.path.split(logfile)[1]
-                filedate = datetime.strptime(filename, 'ezproxy-%Y.%m.%d.log')
+        # Pour chaque fichier de log à traiter
+        for logfile in sorted(glob.glob(config['logpath'])):
 
-                if filedate < mindate:
-                    continue
+            # format du fichier 'ezproxy-YYYY.MM.DD.log'
+            filename = os.path.split(logfile)[1]
+            filedate = datetime.strptime(filename, 'ezproxy-%Y.%m.%d.log')
 
-                self.stdout.write("Processing '{}'".format(os.path.basename(logfile)))
+            if filedate < mindate:
+                continue
 
-                # Ouvre le fichier
-                with open(logfile) as handle:
+            self.stdout.write("Processing '{}'".format(os.path.basename(logfile)))
 
-                    #
-                    # Importe les connexions
-                    #
-                    processconnexions(handle)
+            #
+            # Importe les connexions
+            #
+            #connexions2sql(logfile, sql)
 
-                    #
-                    # Envoie les données au serveur EZPaarse
-                    #
-                    handle.seek(offset=0)
+            #
+            # Envoie les données au serveur EZPaarse
+            #
+            csvfile = log2csv(logfile)
+
+            #
+            # Envoie les données d'EZPaarse en base sql
+            #
+            csv2sql(csvfile, sql)
 
 
 

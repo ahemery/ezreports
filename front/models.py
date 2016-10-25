@@ -27,7 +27,7 @@ class Editeur(models.Model):
 class Ressource(models.Model):
     id = models.AutoField(primary_key=True)
     libelle = models.CharField(max_length=250, null=False, unique=True)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, max_length=250)
     editeur = models.ForeignKey(Editeur, null=True, default=None)
 
     def save(self, *args, **kwargs):
