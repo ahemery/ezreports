@@ -193,23 +193,23 @@ def csv2sql(filename, sql):
                         "WHERE NOT EXISTS(SELECT id FROM utilisateurs WHERE hash = md5(%(login)s))",
                         params={'login': login})
 
-            if row['publisher_name'] is not None and row['publisher_name'] is not None:
+            if row['publisher_name'] is not '':
                 sql.execute("INSERT INTO editeurs (libelle, slug) SELECT %(libelle)s, %(slug)s "
                             "FROM (SELECT 1) as tmp "
                             "WHERE NOT EXISTS(SELECT id FROM editeurs WHERE slug = %(slug)s) LIMIT 1 ",
                             params={'libelle': row["publisher_name"], 'slug': slugify(row['publisher_name'])})
             # todo: Faire le lien entre la ressource et l'éditeur lors de la création d'une nouvelle ressource
-            if row['platform'] is not None and row['platform'] is not None:
+            if row['platform_name'] is not '':
                 sql.execute("INSERT INTO ressources (libelle, slug) SELECT %(libelle)s, %(slug)s "
                             "FROM (SELECT 1) as tmp "
                             "WHERE NOT EXISTS(SELECT id FROM ressources WHERE slug = %(slug)s) LIMIT 1 ",
                             params={'slug': slugify(row["platform_name"]), 'libelle': row["platform_name"]})
-            if row['rtype'] is not None and row['rtype'] is not None:
+            if row['rtype'] is not '':
                 sql.execute("INSERT INTO types (code) SELECT %(code)s "
                             "FROM (SELECT 1) as tmp "
                             "WHERE NOT EXISTS(SELECT id FROM types WHERE code = %(code)s) LIMIT 1 ",
                             params={'code': row["rtype"]})
-            if row['mime'] is not None and row['mime'] is not None:
+            if row['mime'] is not '':
                 sql.execute("INSERT INTO formats (code) SELECT %(code)s "
                             "FROM (SELECT 1) as tmp "
                             "WHERE NOT EXISTS(SELECT id FROM formats WHERE code = %(code)s) LIMIT 1 ",
@@ -257,6 +257,8 @@ def csv2sql(filename, sql):
 
             # todo: Vilain hack, bouuh !
             infos = ldap.entries[0]._attributes
+            if not infos:
+                continue
 
             #
             # Converti le profil en tableau si ce n'est pas le cas
