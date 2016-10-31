@@ -1,0 +1,73 @@
+{% extends 'layout.html' %}
+{% load staticfiles %}
+{% load humanize %}
+
+{% block breadcrumb %}
+	<li class=''><a href="{% url "connexions" %}">Connexions</a></li>
+	<li class=""><a href="{% url "connexions" editeur=editeur.slug %}">{{ editeur.libelle }}</a></li>
+	<li class="title">{{ ressource.libelle }}</li>
+{% endblock %}
+
+
+{% block content %}
+	<h2><a href="{% url 'connexions' editeur=editeur.slug %}"><i class="fa fa-arrow-left"></i></a> {{ ressource.libelle }}</h2>
+
+	<div class="row">
+
+		<div class="col-md-6">
+			<div class='panel panel-default'>
+				<div class='panel-heading'><i class='fa fa-bar-chart fa fa-large'></i> Connexions par années <div class='panel-tools'>
+					</div>
+				</div>
+				<div class='panel-body'>
+					<div id="months"></div>
+				</div>
+			</div>
+		</div>
+
+
+		<div class="col-md-6">
+		</div>
+
+	</div>
+{%  endblock %}
+
+
+{% block js %}
+<script src="{% static 'js/highcharts.js' %}"></script>
+<script src="{% static 'js/highcharts-fr.js' %}"></script>
+
+{% endblock %}
+
+
+{% block script %}
+	$(document).ready( function()
+	{
+		$('#months').highcharts({
+			credits: {
+				enabled: false,
+			},
+			title: {
+				text: '',
+			},
+			xAxis: {
+            categories: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+			},
+			yAxis: {
+				allowDecimals: false,
+				title: {
+					text: 'Connexions'
+				},
+			},
+			series: [
+			{% for y, m in connexions.items %}
+			{
+				name: '{{ y }}',
+				data: [{% for k, v in m.items %}{{ v }}, {% endfor %}]
+			},
+			{% endfor %}
+			]
+		});
+	});
+{% endblock %}
+

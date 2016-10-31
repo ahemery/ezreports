@@ -64,8 +64,36 @@ def dashboard_view(request):
 @login_required
 def connexions_ressource_view(request, editeur=None, ressource=None):
 
-    return render(request, 'connexions/ressource.html',
-    {
+    res = get_object_or_404(Ressource, slug=ressource)
+
+    with connection.cursor() as cursor:
+
+        # Connexions par année
+        cursor.execute("""
+        select year(c.date) as annee, month(c.date) as mois, count(*) as total
+        from connexions c
+
+        left join liens l        on l.id = c.lien_id
+        left join ressources r   on r.id = l.ressource_id
+        left join editeurs e     on e.id = r.editeur_id
+
+        where e.slug = %s
+
+        group by year(c.date), month(c.date)
+        order by annee, mois""", [editeur])
+        c = cursor.fetchall()
+
+    conn = {}
+    for r in c:
+        if not r[0] in conn:
+            conn[r[0]] = {1: 'null', 2: 'null', 3: 'null', 4: 'null', 5: 'null', 6: 'null',
+                          7: 'null', 8: 'null', 9: 'null', 10: 'null', 11: 'null', 12: 'null'}
+        conn[r[0]][r[1]] = r[2]
+
+    return render(request, 'connexions/ressource.html', {
+        'connexions': conn,
+        'editeur': Editeur.objects.get(slug=editeur),
+        'ressource': res,
     })
 
 
@@ -73,6 +101,16 @@ def connexions_ressource_view(request, editeur=None, ressource=None):
 def connexions_editeur_view(request, editeur=None):
 
     ed = get_object_or_404(Editeur, slug=editeur)
+
+    ressources = Connexion.objects\
+        .values('lien__ressource')\
+        .filter(date__year=str(datetime.now().year))\
+        .filter(lien__ressource__editeur=ed)\
+        .annotate(total=Count('lien__ressource'))\
+        .annotate(ressource=F('lien__ressource__libelle'))\
+        .annotate(ressource_slug=F('lien__ressource__slug'))\
+        .order_by('-total')[:10]
+
     with connection.cursor() as cursor:
 
         # Connexions par année
@@ -100,6 +138,7 @@ def connexions_editeur_view(request, editeur=None):
     return render(request, 'connexions/editeur.html', {
         'editeur': ed,
         'connexions': conn,
+        'ressources': ressources,
     })
 
 
