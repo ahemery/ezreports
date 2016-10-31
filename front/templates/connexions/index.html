@@ -24,9 +24,9 @@
 
 		<div class="col-md-6">
 			<div class='panel panel-default'>
-				<div class='panel-heading'><i class='fa fa-trophy'></i> Top {{ tops|length }} des Ressources utilisées en {%  now 'Y' %}</div>
+				<div class='panel-heading'><i class='fa fa-trophy'></i> Top des Ressources utilisées cette année</div>
 				<div class='panel-body'>
-				<table class="table table-condensed table-hover">
+				<table class="table table-condensed table-hover" id="ressources">
 					<thead>
 					<tr>
 						<th>Ressource</th>
@@ -39,7 +39,7 @@
 					<tr>
 						<td><a href="{% url 'connexions' editeur=top.editeur_slug ressource=top.ressource_slug %}">{{ top.ressource }}</a></td>
 						<td><a href="{% url 'connexions' editeur=top.editeur_slug %}">{{ top.editeur }}</a></td>
-						<td class="text-right">{{ top.total |intcomma }}</td>
+						<td class="text-right">{{ top.total | intcomma}}</td>
 					</tr>
 					{% endfor %}
 					</tbody>
@@ -59,13 +59,24 @@
 {% block js %}
 <script src="{% static 'js/highcharts.js' %}"></script>
 <script src="{% static 'js/highcharts-fr.js' %}"></script>
-
+<script src="{% static 'js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'js/dataTables.bootstrap.js' %}"></script>
 {% endblock %}
 
 
 {% block script %}
 	$(document).ready( function()
 	{
+		$('#ressources').DataTable(
+		{
+			bSort: false,
+			bLengthChange: false,
+			bFilter: false,
+			bInfo: true,
+			bAutoWidth: true,
+			stateSave: true,
+		});
+
 		$('#months').highcharts({
 			credits: {
 				enabled: false,
