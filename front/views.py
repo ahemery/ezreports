@@ -62,14 +62,49 @@ def dashboard_view(request):
 
 
 @login_required
-def connexions_view(request):
+def connexions_ressource_view(request, editeur=None, ressource=None):
 
-    start = datetime.now() - timedelta(days=90)
-    connexions = Connexion.objects \
-        .values('date')\
-        .filter(date__gte=start)\
-        .annotate(total=Count('date'))\
-        .order_by('date')
+    return render(request, 'connexions/ressource.html',
+    {
+    })
+
+
+@login_required
+def connexions_editeur_view(request, editeur=None):
+
+    ed = get_object_or_404(Editeur, slug=editeur)
+    with connection.cursor() as cursor:
+
+        # Connexions par année
+        cursor.execute("""
+        select year(c.date) as annee, month(c.date) as mois, count(*) as total
+        from connexions c
+
+        left join liens l        on l.id = c.lien_id
+        left join ressources r   on r.id = l.ressource_id
+        left join editeurs e     on e.id = r.editeur_id
+
+        where e.slug = %s
+
+        group by year(c.date), month(c.date)
+        order by annee, mois""", [editeur])
+        res = cursor.fetchall()
+
+    conn = {}
+    for r in res:
+        if not r[0] in conn:
+            conn[r[0]] = {1: 'null', 2: 'null', 3: 'null', 4: 'null', 5: 'null', 6: 'null',
+                          7: 'null', 8: 'null', 9: 'null', 10: 'null', 11: 'null', 12: 'null'}
+        conn[r[0]][r[1]] = r[2]
+
+    return render(request, 'connexions/editeur.html', {
+        'editeur': ed,
+        'connexions': conn,
+    })
+
+
+@login_required
+def connexions_index_view(request):
 
     tops = Connexion.objects\
         .values('lien__ressource')\
@@ -157,9 +192,8 @@ def connexions_view(request):
                           7: 'null', 8: 'null', 9: 'null', 10: 'null', 11: 'null', 12: 'null'}
         conn[r[0]][r[1]] = r[2]
 
-    return render(request, 'connexions.html', {
-        # 'connexions': connexions,
-        'start': start,
+    return render(request, 'connexions/index.html', {
+        # 'start': start,
         'tops': tops,
         'donut': sorted(donut.items(), key=lambda x: x[1]['total'], reverse=True),
         'connexions': conn,

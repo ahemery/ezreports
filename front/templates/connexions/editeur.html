@@ -1,0 +1,96 @@
+{% extends 'layout.html' %}
+{% load staticfiles %}
+{% load humanize %}
+
+{% block breadcrumb %}
+	<li class=''><a href="{% url "connexions" %}">Connexions</a></li>
+	<li class="title">{{ editeur.libelle }}</li>
+{% endblock %}
+
+
+{% block content %}
+	<h2><a href="{% url 'connexions' %}"><i class="fa fa-arrow-left"></i></a> {{ editeur.libelle }}</h2>
+
+	<div class="row">
+
+		<div class="col-md-6">
+			<div class='panel panel-default'>
+				<div class='panel-heading'><i class='fa fa-bar-chart fa fa-large'></i> Connexions par années <div class='panel-tools'>
+					</div>
+				</div>
+				<div class='panel-body'>
+					<div id="months"></div>
+				</div>
+			</div>
+		</div>
+
+
+		<div class="col-md-6">
+			<div class='panel panel-default'>
+				<div class='panel-heading'><i class='fa fa-trophy'></i> Ressources utilisées en {%  now 'Y' %}</div>
+				<div class='panel-body'>
+				<table class="table table-condensed table-hover">
+					<thead>
+					<tr>
+						<th>Ressource</th>
+						<th>Connexions</th>
+					</tr>
+					</thead>
+					<tbody>
+					{% for top in tops %}
+					<tr>
+						<td><a href="{% url 'connexions' editeur=top.editeur_slug ressource=top.ressource_slug %}">{{ top.ressource }}</a></td>
+						<td class="text-right">{{ top.total |intcomma }}</td>
+					</tr>
+					{% endfor %}
+					</tbody>
+				</table>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-md-6" id="donut">
+
+		</div>
+	</div>
+{%  endblock %}
+
+
+{% block js %}
+<script src="{% static 'js/highcharts.js' %}"></script>
+<script src="{% static 'js/highcharts-fr.js' %}"></script>
+
+{% endblock %}
+
+
+{% block script %}
+	$(document).ready( function()
+	{
+		$('#months').highcharts({
+			credits: {
+				enabled: false,
+			},
+			title: {
+				text: '',
+			},
+			xAxis: {
+            categories: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+			},
+			yAxis: {
+				allowDecimals: false,
+				title: {
+					text: 'Connexions'
+				},
+			},
+			series: [
+			{% for y, m in connexions.items %}
+			{
+				name: '{{ y }}',
+				data: [{% for k, v in m.items %}{{ v }}, {% endfor %}]
+			},
+			{% endfor %}
+			]
+		});
+	});
+{% endblock %}
+

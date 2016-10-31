@@ -17,7 +17,9 @@ def handler404(request):
 
 urlpatterns = [
     url(r'^$', views.dashboard_view, name='dashboard'),
-    url(r'^connexions/$', views.connexions_view, name='connexions'),
+    url(r'^connexions/(?P<editeur>[\w\-]+)/(?P<ressource>[\w\-]+)$', views.connexions_ressource_view, name='connexions'),
+    url(r'^connexions/(?P<editeur>[\w\-]+)$', views.connexions_editeur_view, name='connexions'),
+    url(r'^connexions/$', views.connexions_index_view, name='connexions'),
     url(r'^consultations/$', views.consultations_view, name='consultations'),
     url(r'^params', views.params_view, name='params'),
 

@@ -37,8 +37,8 @@
 					<tbody>
 					{% for top in tops %}
 					<tr>
-						<td><a href="{% url 'ressource' slug=top.ressource_slug %}">{{ top.ressource }}</a></td>
-						<td><a href="{% url 'editeur' slug=top.editeur_slug %}">{{ top.editeur }}</a></td>
+						<td><a href="{% url 'connexions' editeur=top.editeur_slug ressource=top.ressource_slug %}">{{ top.ressource }}</a></td>
+						<td><a href="{% url 'connexions' editeur=top.editeur_slug %}">{{ top.editeur }}</a></td>
 						<td class="text-right">{{ top.total |intcomma }}</td>
 					</tr>
 					{% endfor %}
@@ -71,10 +71,10 @@
 				enabled: false,
 			},
 			title: {
-				text: 'Connexions aux ressources'
+				text: '',
 			},
 			xAxis: {
-            categories: ['Janvier', 'Février', 'Mars', 'ApAvril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+            categories: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
 			},
 			yAxis: {
 				allowDecimals: false,
