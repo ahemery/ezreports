@@ -198,17 +198,20 @@ def csv2sql(filename, sql):
                             "FROM (SELECT 1) as tmp "
                             "WHERE NOT EXISTS(SELECT id FROM editeurs WHERE slug = %(slug)s) LIMIT 1 ",
                             params={'libelle': row["publisher_name"], 'slug': slugify(row['publisher_name'])})
+
             # todo: Faire le lien entre la ressource et l'éditeur lors de la création d'une nouvelle ressource
             if row['platform_name'] is not '':
                 sql.execute("INSERT INTO ressources (libelle, slug) SELECT %(libelle)s, %(slug)s "
                             "FROM (SELECT 1) as tmp "
                             "WHERE NOT EXISTS(SELECT id FROM ressources WHERE slug = %(slug)s) LIMIT 1 ",
                             params={'slug': slugify(row["platform_name"]), 'libelle': row["platform_name"]})
+
             if row['rtype'] is not '':
                 sql.execute("INSERT INTO types (code) SELECT %(code)s "
                             "FROM (SELECT 1) as tmp "
                             "WHERE NOT EXISTS(SELECT id FROM types WHERE code = %(code)s) LIMIT 1 ",
                             params={'code': row["rtype"]})
+
             if row['mime'] is not '':
                 sql.execute("INSERT INTO formats (code) SELECT %(code)s "
                             "FROM (SELECT 1) as tmp "
@@ -353,6 +356,7 @@ def csv2sql(filename, sql):
                                 "WHERE NOT EXISTS(SELECT code FROM composantes WHERE code = %(code)s) LIMIT 1 ",
                                 {'code': composante_code, 'libelle': composante_libelle})
 
+                # todo: Gérer le cas il y a plusieurs diplomes
                 if diplome_code is not None and diplome_libelle is not None:
                     sql.execute("REPLACE INTO diplomes (code, libelle) SELECT %(code)s, %(libelle)s "
                                 "FROM (SELECT 1) as tmp "
