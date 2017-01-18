@@ -12,9 +12,16 @@
 	<div class="row">
 		<div class="col-md-6">
 			<div class='panel panel-default'>
-				<div class='panel-heading'><i class='fa fa-list-alt'></i> Liste des éditeurs</div>
+				<div class='panel-heading'>
+					<i class='fa fa-list-alt'></i> Liste des éditeurs
+					<div class='panel-tools'>
+						<div class='checkbox'>
+							<label for="hide_empty">Cacher les éditeurs sans ressource <input type="checkbox" id="hide_empty"> </label>
+						</div>
+					</div>
+				</div>
 				<div class='panel-body'>
-					<table class="table table-hover table-condensed">
+					<table class="table table-hover table-condensed" id="editeurs">
 						<thead>
 						<tr>
 							<th>Editeur</th>
@@ -38,7 +45,7 @@
 			<div class='panel panel-default'>
 				<div class='panel-heading'><i class='fa fa-unlink'></i> Liens sans ressource associée</div>
 				<div class='panel-body'>
-					<table class="table table-condensed table-hover">
+					<table class="table table-condensed table-hover" id="liens">
 						<thead>
 						<tr>
 							<th>Url</th>
@@ -63,10 +70,19 @@
 {% block script %}
 $(document).ready(function()
 {
-	$('table').DataTable(
+	editeurs = $('#editeurs').DataTable(
 	{
 		bLengthChange: false,
 		bFilter: true,
+		bInfo: true,
+		bAutoWidth: true,
+		stateSave: true,
+	});
+
+	liens = $('#liens').DataTable(
+	{
+		bLengthChange: false,
+		bFilter: false,
 		bInfo: true,
 		bAutoWidth: true,
 		stateSave: true,
@@ -79,3 +95,5 @@ $(document).ready(function()
 <script src="{% static 'js/dataTables.bootstrap.js' %}"></script>
 {% endblock %}
 
+{% block css %}
+{%  endblock %}

@@ -193,26 +193,26 @@ def csv2sql(filename, sql):
                         "WHERE NOT EXISTS(SELECT id FROM utilisateurs WHERE hash = md5(%(login)s))",
                         params={'login': login})
 
-            if row['publisher_name'] is not '':
+            if row['publisher_name']:
                 sql.execute("INSERT INTO editeurs (libelle, slug) SELECT %(libelle)s, %(slug)s "
                             "FROM (SELECT 1) as tmp "
                             "WHERE NOT EXISTS(SELECT id FROM editeurs WHERE slug = %(slug)s) LIMIT 1 ",
                             params={'libelle': row["publisher_name"], 'slug': slugify(row['publisher_name'])})
 
             # todo: Faire le lien entre la ressource et l'éditeur lors de la création d'une nouvelle ressource
-            if row['platform_name'] is not '':
+            if row['platform_name']:
                 sql.execute("INSERT INTO ressources (libelle, slug) SELECT %(libelle)s, %(slug)s "
                             "FROM (SELECT 1) as tmp "
                             "WHERE NOT EXISTS(SELECT id FROM ressources WHERE slug = %(slug)s) LIMIT 1 ",
                             params={'slug': slugify(row["platform_name"]), 'libelle': row["platform_name"]})
 
-            if row['rtype'] is not '':
+            if row['rtype']:
                 sql.execute("INSERT INTO types (code) SELECT %(code)s "
                             "FROM (SELECT 1) as tmp "
                             "WHERE NOT EXISTS(SELECT id FROM types WHERE code = %(code)s) LIMIT 1 ",
                             params={'code': row["rtype"]})
 
-            if row['mime'] is not '':
+            if row['mime']:
                 sql.execute("INSERT INTO formats (code) SELECT %(code)s "
                             "FROM (SELECT 1) as tmp "
                             "WHERE NOT EXISTS(SELECT id FROM formats WHERE code = %(code)s) LIMIT 1 ",
@@ -404,7 +404,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--min-date',
                             help="Everything before this date is ignored (dd/mm/yyyy)",
-                            default=date.today() - timedelta(1),
+                            #default=date.today() - timedelta(1),
                             required=False)
 
     def handle(self, *args, **options):
@@ -438,7 +438,7 @@ class Command(BaseCommand):
             #
             # Importe les connexions
             #
-            #connexions2sql(logfile, sql)
+            connexions2sql(logfile, sql)
 
             #
             # Envoie les données au serveur EZPaarse
